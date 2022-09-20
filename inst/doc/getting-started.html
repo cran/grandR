@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Getting started</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Getting started</h1>
+
+
+
+<p>Here we will show a very basic example how to use grandR to perform
+differential gene expression analysis. For much more vignettes, see the
+<a href="https://grandr.erhard-lab.de">grandR website</a>.</p>
+<p>We will use data from <a href="https://www.nature.com/articles/s41586-021-03689-8">[1]</a>. These
+are SLAM-seq data from multiple time points (1h,2h,4h,6h and 20h) after
+acute depletion of BANP. BANP is a transcriptional activator that binds
+to unmethylated CGCG motifs in CpG island promoters.</p>
+<p>We first load the grandR package and the read the GRAND-SLAM output
+table directly from zenodo:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>({</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">library</span>(grandR)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">library</span>(patchwork)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">ReadGRAND</span>(<span class="st">&quot;https://zenodo.org/record/6976391/files/BANP.tsv.gz&quot;</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">design=</span><span class="fu">c</span>(<span class="st">&quot;Cell&quot;</span>,<span class="st">&quot;Experimental.time&quot;</span>,<span class="st">&quot;Genotype&quot;</span>,Design<span class="sc">$</span>dur<span class="fl">.4</span>sU,Design<span class="sc">$</span>has<span class="fl">.4</span>sU,Design<span class="sc">$</span>Replicate))</span></code></pre></div>
+<p>The GRAND-SLAM output contains any gene with at least 1 read, so
+let’s filter this (by default: at least 100 reads in half of the
+samples)</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">FilterGenes</span>(data)</span></code></pre></div>
+<p>Let’s do a quick quality control and check the principal component
+analysis. We have to setup the <code>Condition</code> first to get nice
+colors:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Condition</span>(data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Genotype&quot;</span>,<span class="st">&quot;Experimental.time.original&quot;</span>,<span class="st">&quot;has.4sU&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">PlotPCA</span>(data)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p>Now we perform differential gene expression analysis:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># differential expression, see differential expression vignette</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>contrasts <span class="ot">&lt;-</span> <span class="fu">GetContrasts</span>(data,<span class="at">contrast=</span><span class="fu">c</span>(<span class="st">&quot;Experimental.time.original&quot;</span>,<span class="st">&quot;0h&quot;</span>),<span class="at">columns =</span> Genotype<span class="sc">==</span><span class="st">&#39;dTag&#39;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">LFC</span>(data,<span class="at">name.prefix =</span> <span class="st">&quot;total&quot;</span>,<span class="at">contrasts =</span> contrasts)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">PairwiseDESeq2</span>(data,<span class="at">name.prefix =</span> <span class="st">&quot;total&quot;</span>,<span class="at">contrasts =</span> contrasts)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">LFC</span>(data,<span class="at">name.prefix =</span> <span class="st">&quot;new&quot;</span>,<span class="at">contrasts =</span> contrasts,<span class="at">mode=</span><span class="st">&quot;new&quot;</span>, <span class="at">normalization =</span> <span class="st">&quot;total&quot;</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">PairwiseDESeq2</span>(data,<span class="at">name.prefix =</span> <span class="st">&quot;new&quot;</span>,<span class="at">contrasts =</span> contrasts,<span class="at">mode=</span><span class="st">&quot;new&quot;</span>, <span class="at">normalization =</span> <span class="st">&quot;total&quot;</span>)</span></code></pre></div>
+<p>The MA plots indicate that changes in new RNA are much more
+pronounced than changes in total RNA, even after 4h:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">MAPlot</span>(data,<span class="at">analysis =</span> <span class="st">&quot;total.4h vs 0h&quot;</span>)<span class="sc">|</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">MAPlot</span>(data,<span class="at">analysis =</span> <span class="st">&quot;new.4h vs 0h&quot;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAkAAAAEgCAMAAABrWDzDAAAACVBMVEUAAAB/f3////8xd7cSAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAYO0lEQVR4nO2di7arKAyGkfd/6JnTCiQh4RoUuvOvNbuKXMLvJ1C1Z5w3mSbk3g7AdLYMINOUDCDTlAwg05QMINOUDCDTlAwg05QMINOUDCDTlAwg05QMINOUDCDTlAwg05QMINOUDCDTlB4ByDmX7eG0WnGXV/NjOtUVjcazLtCEOYCcc93unqdTXXkeoN5+Oxe8+mWAjnXlBYB8t1Xwz4/qWFcUGoeDafoMG3cOkDtZBdJRTkcK3H9Jkf0VR4mw41MPvcfdP9UVRYAc3hCmaWCVc9hC7+Gh/AAtsr1gwMAMn48d57qiN4W51BNHzCAdp9lRJZm5uVXHEIQtiVthMPkJV1QB8qif0qXmafZUCfCVtwoV2V7Ikm9CHSB/liuaAN07BJj8wmGtQpcZjGobq/olAOQoQCe7shIgZgqrWgWLgSI7WNWvFHCcZ1wC6DdcWQhQ8Av0jviYjVUEvFjhFlb1iwXoX1f+/YUD0MGuLAUI7/uqVcQ4Hyvcwqp+IYBAqsdT0tGuaAIEJnw8JpPe8YN1tBT+RTUcDBDsVBiHSD8OdUUVoDRIB4Ac7aj3DVaR3LTaMwGKYwkC6HhXVJp10KOYEAblAYDouJ2NcWeIhB0iHwVoS1cUAfLIIshNG0B4qZRX/7ZV/UIBO9g9mBoz0xKwEr+rK8ecDNOeMoBMUzKATFMygExTMoBMUzKATFMygExTMoBMUzKATFMygExTMoBMUzKATFMygExTMoBMU1IAyBgU9CeMMYDW6U8Y81cBcrL02lCr6QEVDCn6MtRJXN1RPn1VwkSPoIOMabhuhBwjnUy/Mhiu4mWVQ9bq0EHGNIXKZhoCCBc8yKcgA4joRwC6rkutrqJ+GaAhE58FiBRU8+m6niKItyL+/GFlK6s1ZmIp1LIvo51csQZ6F6C0sBu/qMgPb0brmZEmQGGqKfky2En4W6XfAcjPAUS+XJwOUPjdmS/6Mvo1frYKVg+vgfK7EZMAkcLHrYGIIcsAov8qwEAVLyv4RYP/BYCGxBuyagpzxd0TlAyJ/3TPJ2FyDUQKH2QMb0gcl2AmtuRIa1NVvCzoF0hV+Bb2+hpoTIIhOFELIPpo5CCfgji/wD98MVEx/HKxkTG1YGSAnD5AC6p4WtyIrXBFkNO0jzFVnOUpzADixFxwCkMqPUf7GNMFEEk1gBixAEWTp76FFfbf0wxAi+5E61bxtFoWBPO1bmRM2xqoVslwyYF699YSgLL3rg4yxgDq05oRaFU9D8gA6pMBRGQA9am4IlC7f3OQMS195vP8TYDKr5CrNaJV0QOqvlIv+fJHAXpEf8IYA2id/oQxBtA6/QljDKB1+hPGGEDr9CeMMYDW6RljXn5txABap0eMab7xsAg0A2idXgFIvF+z6A03A2id3gBI5MQAOk8ProHSOzs5J478z9yUm9+iit/Uc8aAl+HyGc1FgmCqWtNbVNHWzk5vqbdozaKVvHdNhxeWn3xM2umJ8UOnddUYvE4Los3eWXNhBsu9cQ78/+rzWrQi2qKKpmb+GED4J8pgpBEAylpnn6TLvA3KAFqn8WivW59e//uEI00OEE506X/y6+gcluoZjo1o9P3f+Sr62zwNoeFYrwjQl5/rQgCF6iMKdIxx6AfbPjuoqYMAOm4Qgqe7azsQ474AgVEEcJGn4vQcuTzXWJy4k4PGTFYxptMAGi1IZ7Awh6FJjAMo28lj0jbwiBHIpbH4DwAU4PnW8V0D+dD5OJvBYacDIJ/qHYsuq2i+2PJTmtw4ip9BYwI+8e8FxiAfJzQ4BDkHqUl/CqGpXYqTAFHc1227xfXn29OaASgMQxeU+wxHwA+eIC6UZXeCjhmBjhp7vuqIOM1ZV13u+8cj3jmG8HWBQvtTAJ33Bf6r5ojTPNUCkAMDUhqBGIIIXTi2X1wDyZ36bYAAHM0DEGGI6G6fznRvdrJQTG3JUOjlifysAojgVAGovDZ6rpOFYk8AlOVUanOp2oLsRuYzBGXzGMdQBSAVG18CiIuddlPs3ykTWlOM/fx8mcn3KqNQHp6KjU8z6NLNLuEY2JO/kyo/EVyjhQBJOGGAuAEobZ4GEOxLS+w1gPYfh8TorvsOz73dT5DME3CZncDo4LSuk9pVoN7MAcQ8gt5SUnQjzDSz9T9Nt8sXMyDpfzN7B6Di+obZFA6fCdBKfi7IzXXJX9LU3HsJoHKucg1gvyvOx/UGQDdGASUWoE9sYFRa0ckFVTQRJB1vw8/vRVUJoAcwInMYMBDNBJOGrQcIRliDQDqcX0GlChpifkSFNZB/YCC6AbrQwkgYkcZdWwsQOeVVBtoAqjXYHvpalRbR/lo+CqV57KL8XGR9PWHbUoDoKW8FCOzigtWuHgDQWmowP+kbf+DmCp9XGJXuFx/PAShgwYZM+XEuviDMZOCb7O/BIsVILvALnaf4ITeLUgK9aRS35I5chf8J4qMA1b+Fk8xM/3YihIrEFnY+XfBwZxc5l0YofH8T6pNB7DPrA+NGwTb5COCHVlfiCtzparlAHlPFmM8UC/fvT3QCnqdkQLhfTFLeSWgDmC0aXBUAco783yTp5ZlNSySnizPYB6D3h56qMd+o8f4/gRPwGhKdQv3KU0inqU/cZkHSUiYSFFOg9XDz//gcLuMTSBf8UcKbqhrj4h+w/0/Xafxc8A3bzjUQeSJe95UfxBBBF72jhb9XfQJ2bA5S573REJS+6saIAEW9SUSvUsBlW/p9aqgiU+k+lsM3uuDDdgpQwiudkYYIVdQFEI3+VjwfL4LRLBSwbEu/T5UqSqj0i683OyEPSGMEisC/yEWzYpxlW/p9KlcRRpULPIyJMfUDlAoBhL6dChXT+BfNcCoA3XqahR6BH1b7hiFefRGd+PkKvT03QFARq9RR1HxL1P0aX0RjPYLBuGKEja5wRsVvQQNVOExMdkM0MgA4YwipESTwo/eaAtfRijHS13istae/IHpmBMUIG00RjOq4kukaqLEv9L3MKwekpuhKPDUBoOt7b1VZFWOkG4lYHadcVemSA2n3EZjWNwCpP8po7Q3fRdBP8MFzE+0AuQNBwA0A2HIRtFhvGw3SF3QMfSa/bqs+2819zk3otk3XHpetmm4+HKQmu6CkZdfNFTKlwx8tYxQNGlCy795L1yLxtNsfAaCyW/hK0wZITM5/UDdQvS9cYUJyuzGkBN/EuheBbk7YA+WlwPg4PQIQmeuVAWo3awggOhrRfxij2Ov9AeJtKfMz9Y1jCCCcAWRdZIzk1lR5dEbpJtdrFYBWvs+KFolomcgRlL9sM6RRgPzrAM0KvlQKopd7rQPQOp/glAReYiXHyMBjAKkohV/otR5A+h0gSxp4VyQ/DsedtwGi7etb84TanNoZIDT+EFAuYQ0UujV3J4cBiGmFKcOOQEcSlJYlZafqxtS8XWgSi0hRDR1okQEEvxgVndIDKL6mpfaFrJ+fZQC1ltkGIIee9reVQU+cQcqMk4JPBcWGB10Dt+L70Il/H+ikVIb/Gv8oQOC2akhwjQSFUFPI7wE0bpu7O9z66ND5hI7aMDQEkHwj8VmAHHos3wKQp6ctxrzg5cYFAE29G/OJCb1Y9RJAhUcZI//i3+jTCQAQeMRDK02CEaIteFRTVW9JUC19zgzo44cu5R7oZGcV7ec/uYD9EDPQR6R3ZuxIqiprCUaItuBRTfV4e2X/LD0xgfFARoVnJ/si8NYaqFRFmRbWGjQDufjEFPKB7tKTx8nZTTT0k90rzlIwRBArPaqoRm8DOx4tx6hNBCCZHpaoOyCSqIGQXENouNpGM0Ds2xfpzHM9z1Jr7oHjcUOMfAycMWNKQdzykWnJvNC/fCyJ36oK/BSPjUqs4Etoiw04A7v+SO8O4pnKoVvuLA8MIQI7+Dh0a9YkFWMkVQHKXhvMpyh3V3QHyDPC+zXkQUsn40XWC9B9FpEF8aUw8soBOvMsJDVcCpbomaRijKQyQPEdc/TCHNdl2aQ7GuSFmjdlgLzr98k5BJB8pgtjSeHJTlH5rK5iEtPdAWMEfTm50sIepQWnQsIVEx34Qu5L/EC84roHHptScQ0U/3ZUEc57w4mXstRmqbJVIHi8paV2Y0BM5W14Uj/JYfWGh+V+Yzz6AI21x5Zv407WXajmYFyb0YBPjvRP6q2meo2RFNZs/MHoCBqnHLw+WCdInVL6vNRvJY2deiKwbGqUz4OY79mk6hF8FzxcD+6D+JYW30rFFgfvPT8EUOHU1KtwONgxjd1lxTGMWlLq6owxtwAINxV8dXHMcYGgO4JCUJ6fshxoQ9sYvrb4utrASE2DnlSxFhEVbZtSvfFjcAqDQ0nYzjoRV8zxtkhsH+eMUHC2wIRlEkYgsFFtXhyBdAgqycNvFVkYA3bUujpjzFccQDRYl754oRdP0GDl0oTEGJP5tEp1gKpTOV6roS8W+sgIxmQ2rfFt2JgktJhBC5sY8Cf2uGJOAKF+wx3OGdamQsdGzVIdgWK0cKN+fYwL39YgjqwGaGwEQnd8IE3pZH8+L1QiLZVQpsxNzyQ29WvYrYY10CBAOBWecTWlFjMHJiwp9nXMGEbpVmus+qv7JgbJ6+izGcGQfD3kGoKdcEsoBgNqr4I7nfR89yPkwV/qV2wpM2DYkUpnh4xhRABKnfreBmOahP32rI18KipV6FWtOwOd7K4inU00nzM81JXqEYuhReV+qgPEPQClN3xwZ5kDjCGs28VQdddAfVWiESh8OvE6kb9iZukiOSRLHsFCjRjDCXGSTn92x5DakQpzhmTWtgE0ruoU1lFFKkK2Sp10lLvMsO+HABAefRcaBVvoNaaxWh8IYg/BLfpYDAQGMvu0sc6W6iK6owquq56e/YwpzydTjmgy0xREbsCKpr4OGdNSb7oemGMkEwQoLLmhnU8MxDE6NtHRjaYqMDYo0eFj9OqQ5T0LGAqWruJpDj0NGtNScSXkeGF8NhJAV3wWyzgHii6TJkBsqPk5ZQhoBohOIbRFkHOFXgMoHr83rvufE4tvB8kAMVVr2qMKEF9XNih08APWyYQnUDnf5AotA0g4pzE1dukCU1Y80AmQqj+DayAnbLN1OV+AngUmHgAZ8uWhaMUqftatgaTWbjTCgJPmrngY2pNZBSrJq9VR+bQ2FZuLhfSeHhOOoMJPqmYMyqvSmE8/xcAA0SFHcipLeQKgchncflcVfG+yvrt8UG6rbif1hkbGDQLQJ3kEoHJDsxqsSQCoGhnoY8jL9Ts41+NKU/uPqjMW2M1728UZDPwYMmRj0Xncgay5Npp5gOpnOtWb2RVMSRX14rN2Rmswhl4GAw0w2156o2zMJGUtAahQTgYIri9wwikAfUMG+wP1wx0v7JD0zQCqZA/zTtoH0WODYa9wGisyvTEZPF8nabmSp327Ww4644cAgnvCkbwEckiquyuWDk0CRLZBh8TyuNspld7SQHQ2nteFRjVIEyCSzgLiqE+9VWtIdxF9J1SsyLI5KI8BEqp8F5WChgHyyBmY6rIb8PAYutNRML4vmPao54vlVVQuJbjPHqoDtNKSKaFLYrgOUFYEiGCDrkAu32Aw1WDni7VWgXuIe0W66LIVD+feSOCLlMKEieOV1QGiwEgALebnAYAIMmjZA7LAPqbdfMPnxTeQ4759qgAEv6xnmUBiEaDBQJqCXV2FMIowFw8tA9fjXBZa5evKzt1ADXmvODJKaVmN5wDEX4Z8DzKAUqJrAYiU3ELZ6qO7ArmPVX48fzUtd0gRIHDy4VGhCwQNuAlHbIKWUMkeWgkQM3w3df18gLzUg4wf5AtzdYEBi0l9X9lJ1QHIB36yNWNT11cbtB6gSmFMRoMv1MrecJ/T8BqIJjnqTAdAq7V8DVQ6yYIvleY2ca4ujSgdEUpVqH9ay7+FFU54dmG1NbeLdVVNREn+OQ5hCJqOUEGvA0RXhw3tbWNeReMxMj955pZB8yHO632AmrK2VrmVNADy4BqDM5j43eRprQeovAYa+lL1lwDi6h2a+hfpoRGI3grDx/D3uIYWNzGvIo01EFvvnwSI63CWjlgq1zkU6rNaFaMBlB3iCx3CiaiR4LMuhwQ602/Cz0NroApAYYcrMx/faxqIPetySBiZ6R/RYwAV1kBpkxzYyagBrQDI0edib+spgKoHSS6Hnors5Fi7JgEKrECA9rumHgCoePolgFDB/Wxr0twaKCEDDuznxBMAFQszc3w4kGWSjm+quQBZVkDiJgasBaihk8IAhPYZL/e7FHMtAAjdjd7CgKUAdXSSrpizNfV41a9pMr5yB3cxYBeAmEX0Ef6VtDS+XQx4HyB5DmsptrPWBriJATusgciz5uaiu0u/A3VTHrdtqDky28wFwI9Su4zQM1KPv24KzPGMgWP3Kr7/TVQBKzOAmivsAeghB4cAwgXHo0R3yrJDBlBWoQGE6yl18Xx+Xl4DbQwQKbgGoB/Qy33bdw30KdcBkNQTA6hU+BBrOqMM3eqZaOU8p5g0qJnOzVxcj9o6BBC55Vcp8OsDjaiXAHrW79Gv8Y1VOANosOxPA9ReBeXnbZRcg/Qamyo8/AJLVydaDCn68gRA4u7jampcLUClihz3sLDkYxc/HXF0pFYaJX2pZKZF+1tUU1PbmwEUPKMjuYqRPXWoATRRhQE0UEsGkOJcexpAb6+BTgYIvhXNATRk7XEAvazSU7d4AjYDiJm7BH7IanM+RMCtmNcASvaEGWJlayPVsAAVczWvFYpQ3NdV2DeAagAVjVJqbaSahwFKQ07wxAAKSotQmrYxQHg6ElfQQ/dLWEPiSJw88d4A+qfgF/LFNV1pw60tUAMcXWsgbEjyISzaYSpfw5TOA+jzX7iSXTRw0zWQX/jllTMkLJ6TJzaFBUG/SDq4zaLbmkZFy26f8YYYQJIKAOHDww3kM4GCJIDmsZIBCsPRwQAtuOqYETtcYjproKUAUUMUBqbCFOaTJ2cCtGLc5i44sAaCmQbrXwJQ/PUBNkQZIJoaRqLy2tAAAk+7YabB+tcA9K3uFYDOvRO9DiCNTFLJJwFSWwPN5N0XoHVrII1MUslwtS7B/yVDink3BmiBlgFEvrCMV/SwDKA+LQXIGUDrg3hbas8A+JLsU7at1dxbyZc/BlA8zbImqxe291XVkLIvfw6gxToPoElpAPSL0vDz7T4sUanDSlIxf/OCGuptvDvY5Q0MF1pU5UEFNWQAaVd5UEENGUAmkwFkmpMBZJqSAWSakgFkmtKyO9HhnhN382ltwcIDnmJB/kbZGsUuduetlOEz84XKeRu9WAVQfL3ByedzTUHfC1Bq8WGA6M+xWvLWyrCZhULFvI3BTQMkeY5iYPFfVdCTF0v7WnxCIZAUcXveYhkpM1eolrcluFB+UnTGcfCPyMGygiJATS0+JBJxe95aGTazUKiYtzE4NYDgBIL/yI1UCxanMLFggYViwQdnMANIjIPZr3AgFqwsosWCVYCEgqVVl7YMICkObn+Mg0LJMgde7lW1RQ0/WmQAZXHcE0B4aySNB/JFXS5YiK5UMHszWaVFbRlAbBxcXE2d5QoWoisVFN57amjRk4MrZQBJccDNtnsWpYJVDpiChXLjLWori7g1b60Mm1koVMzbGJweQGm0SfuV+ssFC8NXsWBMGGqx1FFFZRG35v25G4mxCnJz5V771CcUoSBM7yzo5V4Nt6itLOLmvD/4KMP0l2UAmaZkAJmmZACZpmQAmaZkAJmmZACZpmQAmab0OEAuSs4x38ZsDc/rVF+2AAh3bE+jVutUX16xOn8/t3T07+hEXwygjXSiL+8ClJ643h/OI6NCyl3IpawhzXGfcefz8eRD0jmd6MurACFrPi8HYqPg8e/rBeBlQnQ8JceXNfDBIwg60Zc3AUImkD103DuSL1xKYdffebyU9yiAjvLlVYDCX3htQaPiXzwEgw2fDPLg02WVHwVQ+HuCLxsA5IA1glFhUYALAC9cKu6RUe5cgM7wZSOA0EydEtKozBcIVyL4/C2A9vZlH4CYuR6WAFcaO/yGUj8H0Oa+bABQ8CgcGZzrnUufrmzqrjrRl1cBQtcWY1TsooP5Uuejb/ceMorkfahrUzrRlzcBglP03UFkFJr9v/+hSw4cL97v+GR9uItDOtGXVwHy8OsBsAtkRNeVCwWg08xn3El5jwLoJF+OMDboqGAf1Ju+HHVOjgr2QRlAjToq2AdlADXqqGAflAFkOlYGkGlKBpBpSgaQaUoGkGlKBpBpSgaQaUoGkGlKBpBpSgaQaUoGkGlKBpBpSgaQaUoGkGlKBpBpSgaQaUoGkGlKBpBpSv8BjI53wfnNehEAAAAASUVORK5CYII=" /><!-- --></p>
+<p>We can easily obtain significantly differentially regulated genes (by
+default: Q&lt;0.05 &amp; abs(LFC)&gt;=1):</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>genes <span class="ot">&lt;-</span> <span class="fu">GetSignificantGenes</span>(data,<span class="at">analysis =</span> <span class="st">&quot;new.4h vs 0h&quot;</span>, <span class="at">criteria =</span> Q<span class="sc">&lt;</span><span class="fl">0.05</span> <span class="sc">&amp;</span> LFC<span class="sc">&lt;</span> <span class="sc">-</span><span class="dv">1</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">GetAnalysisTable</span>(data,<span class="at">analyses =</span> <span class="st">&quot;4h vs 0h&quot;</span>,<span class="at">genes =</span> genes, <span class="at">columns =</span> <span class="st">&quot;LFC|Q&quot;</span>, <span class="at">gene.info =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="kable-table">
+<table>
+<colgroup>
+<col width="17%" />
+<col width="23%" />
+<col width="20%" />
+<col width="20%" />
+<col width="18%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">total.4h vs 0h.LFC</th>
+<th align="right">total.4h vs 0h.Q</th>
+<th align="right">new.4h vs 0h.LFC</th>
+<th align="right">new.4h vs 0h.Q</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Bzw1</td>
+<td align="right">-0.4049167</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.591874</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Cep350</td>
+<td align="right">-0.9428386</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.310057</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Ptpn4</td>
+<td align="right">-0.8717413</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.290797</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Pign</td>
+<td align="right">-0.7468109</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.740792</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Pfkfb2</td>
+<td align="right">-1.2109515</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.034935</td>
+<td align="right">0.0197814</td>
+</tr>
+<tr class="even">
+<td align="left">Rpl7a</td>
+<td align="right">-0.2087491</td>
+<td align="right">0.0213640</td>
+<td align="right">-1.433379</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">2310035C23Rik</td>
+<td align="right">-0.7708118</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.127441</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Dars</td>
+<td align="right">-0.1614027</td>
+<td align="right">0.0205584</td>
+<td align="right">-1.712862</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Lrsam1</td>
+<td align="right">-1.1848762</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.532849</td>
+<td align="right">0.0007304</td>
+</tr>
+<tr class="even">
+<td align="left">Casc4</td>
+<td align="right">-0.6368342</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.684313</td>
+<td align="right">0.0000001</td>
+</tr>
+<tr class="odd">
+<td align="left">Rc3h2</td>
+<td align="right">-1.1937913</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.371584</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">March7</td>
+<td align="right">-1.1202654</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.366951</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Gm9833</td>
+<td align="right">-0.8112235</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.778287</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Zfp512b</td>
+<td align="right">-1.2073193</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.747552</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Myef2</td>
+<td align="right">-0.9035457</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.590065</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Lcmt2</td>
+<td align="right">-1.4894524</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.684084</td>
+<td align="right">0.0000006</td>
+</tr>
+<tr class="odd">
+<td align="left">Cenpb</td>
+<td align="right">-1.2772139</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.531545</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Wdr77</td>
+<td align="right">-1.3261003</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.020690</td>
+<td align="right">0.0000002</td>
+</tr>
+<tr class="odd">
+<td align="left">Atp5f1</td>
+<td align="right">-0.1750994</td>
+<td align="right">0.0682100</td>
+<td align="right">-1.588790</td>
+<td align="right">0.0000033</td>
+</tr>
+<tr class="even">
+<td align="left">Nmd3</td>
+<td align="right">-0.6177977</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.046226</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Rbm39</td>
+<td align="right">-0.9881069</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.628205</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Snx5</td>
+<td align="right">-0.2761889</td>
+<td align="right">0.0000283</td>
+<td align="right">-1.045626</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Smg5</td>
+<td align="right">-1.4243152</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.140475</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Ttc14</td>
+<td align="right">-0.8866021</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.279095</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Strip1</td>
+<td align="right">-1.1181880</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.584319</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Rnpc3</td>
+<td align="right">-1.0144526</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.906450</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Mms22l</td>
+<td align="right">-0.6410693</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.204826</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Agl</td>
+<td align="right">-0.6282185</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.724997</td>
+<td align="right">0.0020372</td>
+</tr>
+<tr class="odd">
+<td align="left">Srsf10</td>
+<td align="right">-0.6756414</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.041562</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Rraga</td>
+<td align="right">-1.1960975</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.626356</td>
+<td align="right">0.0000043</td>
+</tr>
+<tr class="odd">
+<td align="left">Prdx1</td>
+<td align="right">-0.1498166</td>
+<td align="right">0.0546104</td>
+<td align="right">-1.248716</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Minos1</td>
+<td align="right">-0.2891798</td>
+<td align="right">0.0682515</td>
+<td align="right">-1.398761</td>
+<td align="right">0.0015429</td>
+</tr>
+<tr class="odd">
+<td align="left">Asph</td>
+<td align="right">-0.3565418</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.681709</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Pole</td>
+<td align="right">-0.5164748</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.583460</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Atraid</td>
+<td align="right">-1.1965615</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.183169</td>
+<td align="right">0.0021098</td>
+</tr>
+<tr class="even">
+<td align="left">Mob1b</td>
+<td align="right">-1.9374683</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.557860</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Ncapg</td>
+<td align="right">-0.4715520</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.524758</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Nop14</td>
+<td align="right">-0.7061881</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.231487</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Denr</td>
+<td align="right">-0.7719097</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.558633</td>
+<td align="right">0.0046419</td>
+</tr>
+<tr class="even">
+<td align="left">Mdh2</td>
+<td align="right">-0.4494444</td>
+<td align="right">0.0000019</td>
+<td align="right">-2.842117</td>
+<td align="right">0.0000165</td>
+</tr>
+<tr class="odd">
+<td align="left">Ap4m1</td>
+<td align="right">-0.6352704</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.005392</td>
+<td align="right">0.0000081</td>
+</tr>
+<tr class="even">
+<td align="left">Chst12</td>
+<td align="right">-1.7593868</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.787141</td>
+<td align="right">0.0029205</td>
+</tr>
+<tr class="odd">
+<td align="left">Rfc5</td>
+<td align="right">-0.4190605</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.263439</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Slc5a6</td>
+<td align="right">-1.0656930</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.460581</td>
+<td align="right">0.0000029</td>
+</tr>
+<tr class="odd">
+<td align="left">Mob1a</td>
+<td align="right">-1.7499198</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.223078</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Mad1l1</td>
+<td align="right">-0.7541517</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.045967</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Fgfr1op2</td>
+<td align="right">-0.8360517</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.123028</td>
+<td align="right">0.0003901</td>
+</tr>
+<tr class="even">
+<td align="left">Ergic2</td>
+<td align="right">-0.7849733</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.593984</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Srrt</td>
+<td align="right">-0.5493759</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.134517</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Tmem209</td>
+<td align="right">-0.9769144</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.131132</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Tubgcp5</td>
+<td align="right">-1.7178942</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.865639</td>
+<td align="right">0.0008877</td>
+</tr>
+<tr class="even">
+<td align="left">Crebzf</td>
+<td align="right">-1.0726153</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.093507</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Supt5</td>
+<td align="right">-0.5697177</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.342800</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Arnt2</td>
+<td align="right">-0.3207844</td>
+<td align="right">0.0395396</td>
+<td align="right">-1.426045</td>
+<td align="right">0.0090770</td>
+</tr>
+<tr class="odd">
+<td align="left">Edrf1</td>
+<td align="right">-1.5350037</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.081083</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Btbd10</td>
+<td align="right">-1.6118774</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.086394</td>
+<td align="right">0.0027987</td>
+</tr>
+<tr class="odd">
+<td align="left">Zfp941</td>
+<td align="right">-0.9880679</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.145216</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Ikzf5</td>
+<td align="right">-0.9380561</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.023575</td>
+<td align="right">0.0000132</td>
+</tr>
+<tr class="odd">
+<td align="left">Upf3a</td>
+<td align="right">-0.7774655</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.507884</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Micu3</td>
+<td align="right">-2.0381825</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.451641</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Arl2bp</td>
+<td align="right">-0.5145906</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.308256</td>
+<td align="right">0.0374124</td>
+</tr>
+<tr class="even">
+<td align="left">Tcf25</td>
+<td align="right">-0.3281309</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.107098</td>
+<td align="right">0.0000747</td>
+</tr>
+<tr class="odd">
+<td align="left">Slc25a4</td>
+<td align="right">-0.2832186</td>
+<td align="right">0.0004546</td>
+<td align="right">-1.364629</td>
+<td align="right">0.0000083</td>
+</tr>
+<tr class="even">
+<td align="left">Zfp317</td>
+<td align="right">-1.8563560</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.046163</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Ddhd2</td>
+<td align="right">-1.4304835</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.523651</td>
+<td align="right">0.0216512</td>
+</tr>
+<tr class="even">
+<td align="left">Ankrd49</td>
+<td align="right">-1.0487246</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.201137</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Ciapin1</td>
+<td align="right">-0.5332762</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.169674</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Ift46</td>
+<td align="right">-0.5200090</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.004062</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Taf1d</td>
+<td align="right">-0.7711545</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.291331</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Tipin</td>
+<td align="right">-0.6868983</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.924255</td>
+<td align="right">0.0000001</td>
+</tr>
+<tr class="odd">
+<td align="left">Ireb2</td>
+<td align="right">-0.5745806</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.577767</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Dbr1</td>
+<td align="right">-1.2502667</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.068616</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Herc1</td>
+<td align="right">-0.8480354</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.063395</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Nktr</td>
+<td align="right">-1.6595711</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.278782</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Qrich1</td>
+<td align="right">-0.6928870</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.025579</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Scamp5</td>
+<td align="right">-1.2507434</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.102386</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Glce</td>
+<td align="right">-1.0766042</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.431818</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Wdr6</td>
+<td align="right">-0.5528243</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.442052</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Map2k2</td>
+<td align="right">-0.6466754</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.869505</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Tex9</td>
+<td align="right">-1.3196501</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.494112</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Rsph4a</td>
+<td align="right">-0.6344661</td>
+<td align="right">0.0000207</td>
+<td align="right">-1.272442</td>
+<td align="right">0.0051859</td>
+</tr>
+<tr class="even">
+<td align="left">Sec63</td>
+<td align="right">-0.8516400</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.317850</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Dctn2</td>
+<td align="right">-0.5404288</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.124960</td>
+<td align="right">0.0001331</td>
+</tr>
+<tr class="even">
+<td align="left">Ppp1r12a</td>
+<td align="right">-0.6554683</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.111509</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Rnf167</td>
+<td align="right">-1.1745182</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.765360</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Nprl3</td>
+<td align="right">-1.5239045</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.352325</td>
+<td align="right">0.0000057</td>
+</tr>
+<tr class="odd">
+<td align="left">Spdl1</td>
+<td align="right">-1.6981270</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.974112</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Cdk12</td>
+<td align="right">-1.7089477</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.606867</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Zfp867</td>
+<td align="right">-1.5832032</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.750745</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Gm17586</td>
+<td align="right">-1.0264258</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.694781</td>
+<td align="right">0.0000126</td>
+</tr>
+<tr class="odd">
+<td align="left">Haspin</td>
+<td align="right">-1.6247701</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.730556</td>
+<td align="right">0.0000065</td>
+</tr>
+<tr class="even">
+<td align="left">Cyb5d1</td>
+<td align="right">-1.3738235</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.978572</td>
+<td align="right">0.0000002</td>
+</tr>
+<tr class="odd">
+<td align="left">Cops3</td>
+<td align="right">-0.1625868</td>
+<td align="right">0.0592244</td>
+<td align="right">-1.006107</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Camk2b</td>
+<td align="right">-0.2123757</td>
+<td align="right">0.0452834</td>
+<td align="right">-1.096598</td>
+<td align="right">0.0262078</td>
+</tr>
+<tr class="odd">
+<td align="left">Cox11</td>
+<td align="right">-1.0678872</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.614065</td>
+<td align="right">0.0000003</td>
+</tr>
+<tr class="even">
+<td align="left">Tmem18</td>
+<td align="right">-2.0734860</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.274443</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Ankfy1</td>
+<td align="right">-0.9841575</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.020487</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Drg1</td>
+<td align="right">-0.3494618</td>
+<td align="right">0.0000012</td>
+<td align="right">-1.472060</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">4930447C04Rik</td>
+<td align="right">-0.7537949</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.659638</td>
+<td align="right">0.0000092</td>
+</tr>
+<tr class="even">
+<td align="left">Dnajc27</td>
+<td align="right">-2.1419602</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.400425</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Churc1</td>
+<td align="right">-0.6628013</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.641795</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Stxbp4</td>
+<td align="right">-0.6779614</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.980874</td>
+<td align="right">0.0000698</td>
+</tr>
+<tr class="odd">
+<td align="left">Med1</td>
+<td align="right">-2.5015464</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.575061</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Taok1</td>
+<td align="right">-1.2255178</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.961266</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Zfp386</td>
+<td align="right">-1.0345934</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.348782</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Sipa1l1</td>
+<td align="right">-0.5652762</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.355421</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Ercc6l2</td>
+<td align="right">-0.6195863</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.898004</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Zfp346</td>
+<td align="right">-1.2157077</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.600378</td>
+<td align="right">0.0000201</td>
+</tr>
+<tr class="odd">
+<td align="left">Cab39l</td>
+<td align="right">-0.3807831</td>
+<td align="right">0.0000005</td>
+<td align="right">-2.133212</td>
+<td align="right">0.0000112</td>
+</tr>
+<tr class="even">
+<td align="left">Micu2</td>
+<td align="right">-0.1761896</td>
+<td align="right">0.3451150</td>
+<td align="right">-1.123774</td>
+<td align="right">0.0061334</td>
+</tr>
+<tr class="odd">
+<td align="left">Camk2g</td>
+<td align="right">-1.4873715</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.057711</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Usp54</td>
+<td align="right">-0.7536751</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.320395</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Akap11</td>
+<td align="right">-0.6919425</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.679484</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Dis3</td>
+<td align="right">-0.3998322</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.003921</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Cyc1</td>
+<td align="right">-0.2758691</td>
+<td align="right">0.0000745</td>
+<td align="right">-1.246631</td>
+<td align="right">0.0001025</td>
+</tr>
+<tr class="even">
+<td align="left">Puf60</td>
+<td align="right">-0.5987206</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.612616</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Mkl2</td>
+<td align="right">-1.3637457</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.273677</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Gm28047</td>
+<td align="right">-1.2548423</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.787430</td>
+<td align="right">0.0096741</td>
+</tr>
+<tr class="odd">
+<td align="left">Atf7</td>
+<td align="right">-1.5128512</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.258619</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Arf3</td>
+<td align="right">-0.9204991</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.785531</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Dzip3</td>
+<td align="right">-0.5710258</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.319581</td>
+<td align="right">0.0000017</td>
+</tr>
+<tr class="even">
+<td align="left">Nsun3</td>
+<td align="right">-0.9790886</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.543068</td>
+<td align="right">0.0080199</td>
+</tr>
+<tr class="odd">
+<td align="left">Zfp414</td>
+<td align="right">-1.1357843</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.852831</td>
+<td align="right">0.0000017</td>
+</tr>
+<tr class="even">
+<td align="left">B230354K17Rik</td>
+<td align="right">-1.1794817</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.387088</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Chaf1a</td>
+<td align="right">-1.2071751</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.388689</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Gm6741</td>
+<td align="right">-0.7776053</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.006212</td>
+<td align="right">0.0015078</td>
+</tr>
+<tr class="odd">
+<td align="left">Mapk14</td>
+<td align="right">-1.5844714</td>
+<td align="right">0.0000000</td>
+<td align="right">-3.457840</td>
+<td align="right">0.0000006</td>
+</tr>
+<tr class="even">
+<td align="left">Rpl7a-ps5</td>
+<td align="right">-0.1272856</td>
+<td align="right">0.2705847</td>
+<td align="right">-1.056035</td>
+<td align="right">0.0239379</td>
+</tr>
+<tr class="odd">
+<td align="left">Cd2ap</td>
+<td align="right">-0.5476119</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.172565</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Eif2ak2</td>
+<td align="right">-0.8770576</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.086080</td>
+<td align="right">0.0000123</td>
+</tr>
+<tr class="odd">
+<td align="left">Polr1c</td>
+<td align="right">-1.0626646</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.666996</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Myo5b</td>
+<td align="right">-0.2075730</td>
+<td align="right">0.1107000</td>
+<td align="right">-1.307604</td>
+<td align="right">0.0132828</td>
+</tr>
+<tr class="odd">
+<td align="left">Rpl17</td>
+<td align="right">-0.2429525</td>
+<td align="right">0.0064102</td>
+<td align="right">-1.270315</td>
+<td align="right">0.0000147</td>
+</tr>
+<tr class="even">
+<td align="left">Dmxl1</td>
+<td align="right">-0.7864044</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.180367</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Maoa</td>
+<td align="right">-0.2142286</td>
+<td align="right">0.0262770</td>
+<td align="right">-1.357778</td>
+<td align="right">0.0033018</td>
+</tr>
+<tr class="even">
+<td align="left">Uhrf2</td>
+<td align="right">-1.2972704</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.727566</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Wdr44</td>
+<td align="right">-0.9717873</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.178816</td>
+<td align="right">0.0001895</td>
+</tr>
+<tr class="even">
+<td align="left">Hmgb3</td>
+<td align="right">-0.3387660</td>
+<td align="right">0.0051868</td>
+<td align="right">-1.350774</td>
+<td align="right">0.0341549</td>
+</tr>
+<tr class="odd">
+<td align="left">Zmym3</td>
+<td align="right">-0.3710260</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.242310</td>
+<td align="right">0.0000001</td>
+</tr>
+<tr class="even">
+<td align="left">Trappc2</td>
+<td align="right">-0.6661864</td>
+<td align="right">0.0000000</td>
+<td align="right">-1.859098</td>
+<td align="right">0.0056808</td>
+</tr>
+<tr class="odd">
+<td align="left">Hells</td>
+<td align="right">-0.7293904</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.054234</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Cox7b</td>
+<td align="right">-0.2073749</td>
+<td align="right">0.1992399</td>
+<td align="right">-1.245849</td>
+<td align="right">0.0110895</td>
+</tr>
+<tr class="odd">
+<td align="left">Fundc2</td>
+<td align="right">-0.3890425</td>
+<td align="right">0.0002625</td>
+<td align="right">-1.422037</td>
+<td align="right">0.0070256</td>
+</tr>
+<tr class="even">
+<td align="left">Nkrf</td>
+<td align="right">-1.8445290</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.183910</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Ofd1</td>
+<td align="right">-0.6918110</td>
+<td align="right">0.0000000</td>
+<td align="right">-2.349520</td>
+<td align="right">0.0000000</td>
+</tr>
+<tr class="even">
+<td align="left">Idh3g</td>
+<td align="right">-0.2804031</td>
+<td align="right">0.0002062</td>
+<td align="right">-1.358422</td>
+<td align="right">0.0001946</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
