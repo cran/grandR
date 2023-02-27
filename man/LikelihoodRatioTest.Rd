@@ -8,11 +8,12 @@ LikelihoodRatioTest(
   data,
   name = "LRT",
   mode = "total",
+  slot = "count",
   normalization = mode,
   target = ~Condition,
   background = ~1,
-  no4sU = FALSE,
   columns = NULL,
+  logFC = FALSE,
   verbose = FALSE
 )
 }
@@ -23,15 +24,17 @@ LikelihoodRatioTest(
 
 \item{mode}{either "total", "new" or "old"}
 
+\item{slot}{which slot to use (should be a count slot, not normalized values)}
+
 \item{normalization}{normalize on "total", "new", or "old" (see details)}
 
 \item{target}{formula specifying the target model (you can use any column name from the \code{\link{Coldata}(data)})}
 
 \item{background}{formula specifying the background model (you can use any column name from the \code{\link{Coldata}(data)})}
 
-\item{no4sU}{Use no4sU columns (TRUE) or not (FALSE)}
-
 \item{columns}{logical vector of which columns (samples or cells) to use (or NULL: use all)}
+
+\item{logFC}{compute and add the log2 fold change as well}
 
 \item{verbose}{Print status updates}
 }
@@ -42,6 +45,7 @@ a new grandR object including a new analysis table. The columns of the new analy
  \item{"S"}{the difference in deviance between the reduced model and the full model}
  \item{"P"}{the likelihood ratio test P value}
  \item{"Q"}{same as P but Benjamini-Hochberg multiple testing corrected}
+ \item{"LFC"}{the log2 fold change for the target model (only with the logFC parameter set to TRUE)}
 }
 }
 \description{

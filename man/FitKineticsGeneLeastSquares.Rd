@@ -9,6 +9,7 @@ FitKineticsGeneLeastSquares(
   gene,
   slot = DefaultSlot(data),
   time = Design$dur.4sU,
+  chase = FALSE,
   CI.size = 0.95,
   steady.state = NULL,
   use.old = TRUE,
@@ -25,6 +26,8 @@ FitKineticsGeneLeastSquares(
 \item{slot}{The data slot to take expression values from}
 
 \item{time}{The column in the column annotation table representing the labeling duration}
+
+\item{chase}{is this a pulse-chase experiment? (see details)}
 
 \item{CI.size}{A number between 0 and 1 representing the size of the confidence interval}
 
@@ -81,6 +84,9 @@ for given parameters s (synthesis rate), d (degradation rate) and f0=f(0) (the a
 
 This function finds s and d such that the squared error between the observed values of old and new RNA and their corresponding functions
 is minimized. For that to work, data has to be properly normalized.
+
+For pulse-chase designs, only the drop of the labeled RNA is considered. Note that in this case the notion "new" / "old" RNA is misleading,
+since labeled RNA corresponds to pre-existing RNA!
 }
 \examples{
 sars <- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),

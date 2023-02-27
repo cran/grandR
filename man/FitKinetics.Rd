@@ -7,7 +7,7 @@
 FitKinetics(
   data,
   name.prefix = "kinetics",
-  type = c("nlls", "ntr", "lm"),
+  type = c("nlls", "ntr", "lm", "chase"),
   slot = DefaultSlot(data),
   time = Design$dur.4sU,
   CI.size = 0.95,
@@ -21,7 +21,7 @@ FitKinetics(
 
 \item{name.prefix}{the prefix of the analysis name to be stored in the grandR object}
 
-\item{type}{Which method to use (either one of "full","ntr","lm")}
+\item{type}{Which method to use (either one of "full","ntr","lm", "chase")}
 
 \item{slot}{The data slot to take expression values from}
 
@@ -56,6 +56,9 @@ This model assumes constant synthesis and degradation rates. Based on this, ther
   \item{\link{FitKineticsGeneLogSpaceLinear}: linear model fit on the old RNA; depends on proper normalization; assumes steady state for estimating the synthesis rate; assumption of homoscedastic gaussian errors in log space is problematic and theoretically not justified}
   \item{\link{FitKineticsGeneNtr}: maximum a posteriori fit on the NTR posterior transformed to the degradation rate; as it is based on the NTR only, it is independent on proper normalization; assumes steady state; theoretically well justified}
 }
+
+Pulse-chase designs are fit using \link{FitKineticsGeneLeastSquares} while only considering the drop of labeled RNA. Note that in this case the notion "new" / "old" RNA is misleading,
+since labeled RNA corresponds to pre-existing RNA!
 
 This function is flexible in what to put in the analysis table. You can specify the statistics using return.fields and return.extra (see \code{\link{kinetics2vector}})
 }

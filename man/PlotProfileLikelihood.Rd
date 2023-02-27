@@ -4,12 +4,20 @@
 \alias{PlotProfileLikelihood}
 \title{Diagnostic plot for estimated models (global error rate)}
 \usage{
-PlotProfileLikelihood(data, label = "4sU", sample = NULL, subread = NULL)
+PlotProfileLikelihood(
+  data,
+  label = "4sU",
+  estimator = NULL,
+  sample = NULL,
+  subread = NULL
+)
 }
 \arguments{
 \item{data}{a grandR object}
 
 \item{label}{which label to consider (see \link{GetDiagnosticParameters}); cannot be NULL}
+
+\item{estimator}{which estimator to consider (see \link{GetDiagnosticParameters}); cannot be NULL}
 
 \item{sample}{which sample to consider (see \link{GetDiagnosticParameters}); cannot be NULL}
 

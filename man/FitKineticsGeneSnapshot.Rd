@@ -14,7 +14,7 @@ FitKineticsGeneSnapshot(
   time.labeling = Design$dur.4sU,
   time.experiment = NULL,
   sample.f0.in.ss = TRUE,
-  hierarchical = TRUE,
+  sample.level = 2,
   beta.prior = NULL,
   return.samples = FALSE,
   return.points = FALSE,
@@ -43,7 +43,7 @@ FitKineticsGeneSnapshot(
 
 \item{sample.f0.in.ss}{whether or not to sample f0 under steady state conditions}
 
-\item{hierarchical}{Take the NTR from the hierarchical Bayesian model (see details)}
+\item{sample.level}{Define how the NTR is sampled from the hierarchical Bayesian model (must be 0,1, or 2; see details)}
 
 \item{beta.prior}{The beta prior for the negative binomial used to sample counts, if NULL, a beta distribution is fit to all expression values and given dispersions}
 
@@ -73,8 +73,10 @@ defined by \code{time.experiment} (i.e. the difference between the reference sam
 \code{time.experiment} is NULL, then the labeling time of the samples is used (e.g. useful if labeling was started concomitantly with
 the perturbation, and the reference samples are unperturbed samples).
 
-By default, the hierarchical Bayesian model is estimated. If hierarchical = FALSE, the NTRs are sampled from a beta distribution
-that approximates the mixture of betas from the replicate samples.
+By default, the hierarchical Bayesian model is estimated. If sample.level = 0, the NTRs are sampled from a beta distribution
+that approximates the mixture of betas from the replicate samples. If sample.level = 1, only the first level from the hierarchical model
+is sampled (corresponding to the uncertainty of estimating the biological variability). If sample.level = 2, the first and second levels
+are estimated (corresponding to the full hierarchical model).
 
 Columns can be given as a logical, integer or character vector representing a selection of the columns (samples or cells).
 The expression is evaluated in an environment having the \code{\link{Coldata}}, i.e. you can use names of \code{\link{Coldata}} as variables to

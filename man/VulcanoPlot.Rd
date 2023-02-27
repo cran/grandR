@@ -9,7 +9,7 @@ VulcanoPlot(
   analysis = Analyses(data)[1],
   p.cutoff = 0.05,
   lfc.cutoff = 1,
-  label.numbers = TRUE,
+  annotate.numbers = TRUE,
   ...
 )
 }
@@ -22,7 +22,7 @@ VulcanoPlot(
 
 \item{lfc.cutoff}{log fold change cutoff (default: 1)}
 
-\item{label.numbers}{if TRUE, label the number of genes}
+\item{annotate.numbers}{if TRUE, label the number of genes}
 
 \item{...}{further parameters passed to \link{PlotScatter}}
 }

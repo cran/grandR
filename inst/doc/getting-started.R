@@ -7,29 +7,27 @@ suppressPackageStartupMessages({
     library(ggplot2)
     library(patchwork)
 })
-data <- ReadGRAND("https://zenodo.org/record/6976391/files/BANP.tsv.gz",
-                  design=c("Cell","Experimental.time","Genotype",Design$dur.4sU,Design$has.4sU,Design$Replicate))
+
+sars <- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),
+                 design=c(Design$Condition,Design$dur.4sU,Design$Replicate))
+sars <- Normalize(sars)
+sars
 
 ## --------------------------------------------------------------------------------------------
-data <- FilterGenes(data)
+PlotGeneProgressiveTimecourse(sars,"SRSF6",steady.state=list(Mock=TRUE,SARS=FALSE))
 
 ## --------------------------------------------------------------------------------------------
-Condition(data) <- c("Genotype","Experimental.time.original","has.4sU")
-PlotPCA(data)
-
-## --------------------------------------------------------------------------------------------
-# differential expression, see differential expression vignette
-contrasts <- GetContrasts(data,contrast=c("Experimental.time.original","0h"),columns = Genotype=='dTag')
-data <- LFC(data,name.prefix = "total",contrasts = contrasts)
-data <- PairwiseDESeq2(data,name.prefix = "total",contrasts = contrasts)
-data <- LFC(data,name.prefix = "new",contrasts = contrasts,mode="new", normalization = "total")
-data <- PairwiseDESeq2(data,name.prefix = "new",contrasts = contrasts,mode="new", normalization = "total")
+SetParallel(cores = 2)  # increase on your system, or omit the cores = 2 for automatic detection
+sars<-FitKinetics(sars,"kinetics",steady.state=list(Mock=TRUE,SARS=FALSE))
 
 ## ----fig.height=3, fig.width=6, warning=FALSE------------------------------------------------
-MAPlot(data,analysis = "total.4h vs 0h")|
-  MAPlot(data,analysis = "new.4h vs 0h")
+Analyses(sars)
 
 ## --------------------------------------------------------------------------------------------
-genes <- GetSignificantGenes(data,analysis = "new.4h vs 0h", criteria = Q<0.05 & LFC< -1)
-GetAnalysisTable(data,analyses = "4h vs 0h",genes = genes, columns = "LFC|Q", gene.info = FALSE)
+head(GetAnalysisTable(sars))
+
+## ----fig.height=4, fig.width=4---------------------------------------------------------------
+PlotScatter(sars,`kinetics.Mock.Half-life`,`kinetics.SARS.Half-life`,
+            lim=c(0,24),correlation = FormatCorrelation())+
+  geom_abline()
 

@@ -10,7 +10,7 @@ Slots(data)
 
 DropSlot(data, pattern = NULL)
 
-AddSlot(data, name, matrix, set.to.default = FALSE)
+AddSlot(data, name, matrix, set.to.default = FALSE, warn = TRUE)
 }
 \arguments{
 \item{data}{A grandR object}
@@ -22,6 +22,8 @@ AddSlot(data, name, matrix, set.to.default = FALSE)
 \item{matrix}{the data matrix for the new slot}
 
 \item{set.to.default}{set the new slot as the default slot?}
+
+\item{warn}{issue a warning if the slot name already exists and is overwritten}
 }
 \value{
 Either the slot names or a grandR data with added/removed slots

@@ -1,17 +1,25 @@
 
 
-read.tsv=function(t,verbose=FALSE,stringsAsFactors=TRUE,...) {
+read.tsv=function(t,verbose=FALSE,stringsAsFactors=FALSE,...) {
+
+  readit=function(file,...)
+    if (requireNamespace("data.table",quietly = TRUE) && summary(file(file))$class!="gzfile") {
+      as.data.frame(data.table::fread(file = file,stringsAsFactors=stringsAsFactors,check.names=FALSE,data.table = FALSE,...))
+    } else {
+      read.delim(file = file,stringsAsFactors=stringsAsFactors,check.names=FALSE,...)
+    }
+
   if (suppressWarnings(requireNamespace("RCurl",quietly = TRUE)) && RCurl::url.exists(t)) {
     file <- tempfile()
     if (verbose) cat("Downloading file...\n")
     download.file(url, file, quiet=!verbose)
     if (verbose) cat("Reading file...\n")
-    t=read.delim(file,stringsAsFactors=FALSE,check.names=FALSE,...)
+    t=readit(file,...)
     if (verbose) cat("Deleting temporary file...\n")
     unlink(file)
   } else {
     if (verbose) cat("Reading file...\n")
-    t=read.delim(t,stringsAsFactors=FALSE,check.names=FALSE,...)
+    t=readit(t,...)
   }
 
   if (stringsAsFactors==TRUE) t=as.data.frame(lapply(t,function(c) if (is.character(c)) factor(c,levels=unique(c)) else c),check.names=FALSE)
@@ -32,6 +40,7 @@ confint.nls.lm=function (object, parm, level = 0.95, ...)
   m2[parm, ]
 }
 
+equal = function(a,b) length(a)==length(b) && all(a==b)
 
 #' Defer calling a function
 #'
@@ -54,7 +63,8 @@ confint.nls.lm=function (object, parm, level = 0.95, ...)
 #' if \code{f} is called a second time, the previous result is returned. This makes sense if the parameter \code{d} is constant (like a grandR object)
 #' and if \code{Heavy.function} is deterministic.
 #'
-#' @details If additional parameters are provided to \code{f}, caching is disabled. Be careful if \code{Heavy.function} is not deterministic (see examples).
+#' @details If additional parameters are provided to \code{f}, caching is disabled. If any of these additional parameters has the same name as the parameters
+#' given to \code{Defer()}, the parameters given to \code{Defer()} are overwritten. Be careful if \code{Heavy.function} is not deterministic (see examples).
 #'
 #' @details Use case scenario: You want to produce a heatmap from a grandR object to be used as \code{plot.static} in the shiny web interface.
 #' \code{\link{PlotHeatmap}} takes some time, and the resulting object is pretty large in memory. Saving the heatmap object to disk is very
@@ -77,7 +87,7 @@ Defer=function(FUN,...,add=NULL, cache=TRUE) {
   function(data,...) {
     pp=list(...)
     if (length(pp)>0) {
-      re=do.call(FUN,c(list(data),param,pp))
+      re=do.call(FUN,c(list(data),utils::modifyList(param,pp)))
       if (!is.null(add)) for (e in if (methods::is(add,"gg")) list(add) else add) re=re+e
       return(re)
     }
@@ -168,6 +178,8 @@ cnt=function(m) {
 #'
 #' @concept helper
 estimate.dispersion=function(ss) {
+  checkPackages("DESeq2")
+
   dds=DESeq2::DESeqDataSetFromMatrix(countData = cnt(ss),colData=data.frame(rep(1,ncol(ss))),design = ~1)
   dds=DESeq2::estimateSizeFactors(dds)
   dds=DESeq2::estimateDispersions(dds,quiet=TRUE)
@@ -218,6 +230,14 @@ opt <- new.env()
 opt$lapply=function(...) lapply(...)
 opt$sapply=function(...) simplify2array(opt$lapply(...))
 opt$nworkers=0
+opt$singlemsg=list()
+
+singleMessage=function(msg) {
+  if (is.null(opt$singlemsg[[msg]])) {
+    cat(sprintf("%s\n (This message is only shown once per session)\n",msg))
+    opt$singlemsg[[msg]] = 1
+  }
+}
 
 
 #' Set up parallel execution
@@ -252,4 +272,22 @@ SetParallel=function(cores=max(1,parallel::detectCores()-2)) {
 #' @export
 #' @concept helper
 IsParallel=function() {opt$nworkers>1}
+
+
+checkPackages=function(pp,error=TRUE,warn=TRUE) {
+  missing = c();
+  for (p in pp) {
+    if (!suppressWarnings(requireNamespace(p,quietly = TRUE))) {
+      missing = c(missing,p)
+    }
+  }
+  if (length(missing)>0) {
+    msg = sprintf("For this function, you need additional packages. Missing package%s: %s. Please install them e.g. using \n BiocManager::install(c('%s'))\n",
+                  if (length(missing)>1) "s" else "",paste(missing,collapse=","),paste(missing,collapse="','"))
+    if (error) stop(msg)
+    if (warn) warning(msg)
+    return(FALSE)
+  }
+  return(TRUE)
+}
 

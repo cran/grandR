@@ -2,14 +2,17 @@
 % Please edit documentation in R/grandR.R
 \name{grandR}
 \alias{grandR}
-\alias{VersionString}
 \alias{Title}
+\alias{IsSparse}
 \alias{dim.grandR}
 \alias{is.grandR}
 \alias{dimnames.grandR}
 \alias{print.grandR}
+\alias{Metadata}
 \alias{subset.grandR}
 \alias{split.grandR}
+\alias{RenameColumns}
+\alias{SwapColumns}
 \alias{merge.grandR}
 \title{Create a grandR object and retrieve basic information}
 \usage{
@@ -24,9 +27,9 @@ grandR(
   parent = NULL
 )
 
-VersionString()
-
 Title(data)
+
+IsSparse(data)
 
 \method{dim}{grandR}(x)
 
@@ -36,9 +39,15 @@ is.grandR(x)
 
 \method{print}{grandR}(x, ...)
 
-\method{subset}{grandR}(x, columns, ...)
+Metadata(x, ...)
+
+\method{subset}{grandR}(x, columns, reorder = TRUE, ...)
 
 \method{split}{grandR}(x, f = Design$Condition, drop = FALSE, ...)
+
+RenameColumns(data, map = NULL, fun = NULL)
+
+SwapColumns(data, s1, s2)
 
 \method{merge}{grandR}(..., list = NULL, column.name = Design$Origin)
 }
@@ -66,9 +75,17 @@ if the RCurl package is installed, this can also be a URL}
 
 \item{columns}{which columns (i.e. samples or cells) to return (see details)}
 
+\item{reorder}{reorder all factors in coldata (if columns for subset define a different order)}
+
 \item{f}{The name of the annotation table according to which the object is split or the new annotation table column name denoting the origin after merging}
 
 \item{drop}{unused}
+
+\item{map}{named list or vector representing a lookup table (names are current column names)}
+
+\item{fun}{a function that maps a vector of names to a new vector of names}
+
+\item{s1, s2}{column names}
 
 \item{list}{a list of grandR objects}
 
@@ -111,6 +128,9 @@ conveniently build a logical vector (e.g., columns=Condition=="x").
   \item{print}{Print information on this grandR object}
   \item{subset}{Create a new grandR object with a subset of the columns (use \code{\link{FilterGenes}} to subset on genes)}
   \item{split}{Split the grandR object into a list of multiple grandR objects (according to the levels of an annotation table column)}
+  \item{RenameColumns}{Rename the column names according to a lookup table (map) or a function (invoked on the current names)}
+  \item{SwapColumns}{Swap the order of two columns (samples or cells)}
+  \item{Metadata}{Obtain global metadata}
   \item{merge}{Merge several grandR objects into one}
 }
 }

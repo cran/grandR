@@ -7,7 +7,7 @@
 ComputeSteadyStateHalfLives(
   data,
   time = Design$dur.4sU,
-  name,
+  name = "HL",
   columns = NULL,
   max.HL = 48,
   CI.size = 0.95,

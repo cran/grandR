@@ -32,9 +32,13 @@ NULL
 #' @param parent A parent object containing default values for all other parameters (i.e. all parameters not specified are obtained from this object)
 #' @param data,x a grandR object
 #' @param columns which columns (i.e. samples or cells) to return (see details)
+#' @param reorder reorder all factors in coldata (if columns for subset define a different order)
 #' @param f The name of the annotation table according to which the object is split or the new annotation table column name denoting the origin after merging
 #' @param list a list of grandR objects
 #' @param column.name a new name for the Coldata table to annotate the merged objects
+#' @param map named list or vector representing a lookup table (names are current column names)
+#' @param fun a function that maps a vector of names to a new vector of names
+#' @param s1,s2 column names
 #' @param drop unused
 #' @param ... further arguments to be passed to or from other methods.
 #'
@@ -61,6 +65,9 @@ NULL
 #'   \item{print}{Print information on this grandR object}
 #'   \item{subset}{Create a new grandR object with a subset of the columns (use \code{\link{FilterGenes}} to subset on genes)}
 #'   \item{split}{Split the grandR object into a list of multiple grandR objects (according to the levels of an annotation table column)}
+#'   \item{RenameColumns}{Rename the column names according to a lookup table (map) or a function (invoked on the current names)}
+#'   \item{SwapColumns}{Swap the order of two columns (samples or cells)}
+#'   \item{Metadata}{Obtain global metadata}
 #'   \item{merge}{Merge several grandR objects into one}
 #' }
 #'
@@ -78,6 +85,29 @@ NULL
 #'
 #' @concept grandr
 grandR=function(prefix=parent$prefix,gene.info=parent$gene.info,slots=parent$data,coldata=parent$coldata,metadata=parent$metadata,analyses=NULL,plots=NULL,parent=NULL) {
+
+  checknames=function(a){
+    if (!all(colnames(a)==rownames(coldata))) stop("Column names do not match!")
+    if (!all(rownames(a)==gene.info$Gene)) stop("Row names do not match!")
+  }
+  for (slot in slots) checknames(slot)
+  check.and.make.unique(gene.info$Gene,label = "Gene",do.error=TRUE)
+  check.and.make.unique(gene.info$Symbol,label = "Symbol",do.error=TRUE)
+
+  if (!"no4sU" %in% colnames(coldata)) {
+    warning("No no4sU entry in coldata, assuming all samples/cells as 4sU treated!")
+    coldata$no4sU=FALSE
+  }
+
+  if (!"Name" %in% colnames(coldata)) {
+    coldata=cbind(data.frame(Name=factor(rownames(coldata),levels=rownames(coldata))),coldata)
+  }
+
+  if ("Condition" %in% colnames(coldata)) {
+    coldata$Condition=as.factor(coldata$Condition)
+  }
+
+
   info=list()
   info$prefix=prefix
   info$gene.info=gene.info
@@ -90,13 +120,23 @@ grandR=function(prefix=parent$prefix,gene.info=parent$gene.info,slots=parent$dat
   info
 }
 
+as.grandR=function(mat,slot="count",coldata=MakeColdata(colnames(mat)),gene.info=rownames(mat)) {
+  if (!is.data.frame(gene.info) && !is.matrix(gene.info)) gene.info=data.frame(Gene=gene.info,Symbol=gene.info,Type="Unknown")
+  gene.info = as.data.frame(gene.info)
 
-#' @rdname grandR
-#' @export
-VersionString=function() {
-  "grandR v0.1.0"
+  if (!all(c("Gene","Symbol","Type") %in% names(gene.info))) stop("Gene info table has to have columns Gene, Symbol and Type!")
+
+  rownames(mat)=gene.info$Gene
+  ntr=mat
+  ntr[,]=0
+  slots=list()
+  slots[[slot]]=mat
+  slots$ntr=ntr
+
+  r=grandR(prefix="",gene.info = gene.info, slots = slots, coldata = coldata,metadata=list(Description="Converted from matrix",`GRAND-SLAM version`=0,Output="dense"))
+  DefaultSlot(r)=slot
+  r
 }
-
 
 #' @rdname grandR
 #' @export
@@ -107,19 +147,23 @@ Title=function(data) {
 
 #' @rdname grandR
 #' @export
+IsSparse=function(data) !is.matrix(data$data$count)
+
+
+#' @rdname grandR
+#' @export
 dim.grandR=function(x) c(dim(x$gene.info)[1],dim(x$coldata)[1])
 #' @rdname grandR
 #' @export
 is.grandR <- function(x) inherits(x, "grandR")
 #' @rdname grandR
 #' @export
-dimnames.grandR=function(x) dimnames(x$data$count)
+dimnames.grandR=function(x) dimnames(x$data[[DefaultSlot(x)]])
 #' @rdname grandR
 #' @export
 print.grandR=function(x,...) {
   cat(
-  sprintf("grandR: %s\nRead from %s\n%d genes, %d samples/cells\nAvailable data slots: %s\nAvailable analyses: %s\nAvailable plots: %s\nDefault data slot: %s\n",
-          x$metadata$Description,
+  sprintf("grandR:\nRead from %s\n%d genes, %d samples/cells\nAvailable data slots: %s\nAvailable analyses: %s\nAvailable plots: %s\nDefault data slot: %s\n",
           x$prefix,
           nrow(x),
           ncol(x),
@@ -129,7 +173,9 @@ print.grandR=function(x,...) {
           DefaultSlot(x))
 )
 }
-
+#' @rdname grandR
+#' @export
+Metadata=function(x,...) {x$metadata}
 
 #' Internal function to apply functions to all slots etc.
 #'
@@ -148,7 +194,7 @@ data.apply=function(data,fun,fun.gene.info=NULL,fun.coldata=NULL,...) {
     re[[l1]]=fun(data$data[[l1]],...)
   }
   ngene.info=if (!is.null(fun.gene.info)) fun.gene.info(data$gene.info,...) else data$gene.info
-  ncoldata=if (!is.null(fun.coldata)) fun.coldata(data$coldata,...) else data$coldata
+  ncoldata=droplevels(if (!is.null(fun.coldata)) fun.coldata(data$coldata,...) else data$coldata)
   analysis=NULL
   if (!is.null(data$analysis)) {
     map=setNames(1:nrow(data$gene.info),data$gene.info$Gene)
@@ -159,13 +205,19 @@ data.apply=function(data,fun,fun.gene.info=NULL,fun.coldata=NULL,...) {
 
 #' @rdname grandR
 #' @export
-subset.grandR=function(x,columns,...) {
+subset.grandR=function(x,columns,reorder=TRUE,...) {
   columns=substitute(columns)
   columns=if (is.null(columns)) colnames(x) else eval(columns,Coldata(x),parent.frame())
   columns=Columns(x,columns,reorder=TRUE)
 
-  data.apply(x,function(m) m[,columns],fun.coldata = function(t)
-    droplevels(t[columns,]))
+  dr=if(!reorder) droplevels else function(x) {
+    ix <- vapply(x, is.factor, NA)
+    x[ix] <- lapply(x[ix], function(v) factor(v,levels=as.character(unique(v))))
+    x
+  }
+  data.apply(x,function(m) m[,columns],fun.coldata = function(t){
+    dr(t[columns,])
+  })
 }
 
 #' @rdname grandR
@@ -176,8 +228,33 @@ split.grandR=function(x,f=Design$Condition,drop=FALSE,...) {
   re$coldata[[Design$Origin]]=c; re }),levels(col))
 }
 
+#' @rdname grandR
+#' @export
+RenameColumns=function(data,map=NULL,fun=NULL) {
+  if (!is.null(fun)) {
+    map=setNames(sapply(colnames(data),fun),colnames(data))
+  }
+  names=rownames(data$coldata)
+  names[names %in% names(map)]=unlist(map[names[names %in% names(map)]])
+  rownames(data$coldata)=names
+  data$coldata$Name=factor(names,levels = names)
+  data.apply(data,function(m) {colnames(m)=names; m})
+}
+#' @rdname grandR
+#' @export
+SwapColumns=function(data,s1,s2) {
+  i1=if(is.numeric(s1)) s1 else which(rownames(data$coldata)==s1)
+  i2=if(is.numeric(s2)) s2 else which(rownames(data$coldata)==s2)
+  return(data.apply(data,function(t) {
+    tmp=t[,i1]
+    t[,i1]=t[,i2]
+    t[,i2]=tmp
+    t
+  }))
+}
 
 #' @rdname grandR
+#' @export merge.grandR
 #' @export
 merge.grandR=function(...,list=NULL,column.name=Design$Origin) {
   list=c(list(...),list)
@@ -190,9 +267,33 @@ merge.grandR=function(...,list=NULL,column.name=Design$Origin) {
     if (!is.null(names(list))) add$coldata[[column.name]]=names(list)[i]
     if (any(colnames(add) %in% colnames(re))) stop("Sample names must be unique!")
     if (any(rownames(add)!=rownames(re))) stop("Data sets must have the same genes!")
-    if (any(colnames(add$coldata)!=colnames(re$coldata))) stop("Data sets have distinct coldata columns!")
+    #if (any(colnames(add$coldata)!=colnames(re$coldata))) stop("Data sets have distinct coldata columns!")
     if (!all(names(add$data) %in% names(re$data))) stop("Data sets must have the same data tables!")
-    re$coldata=rbind(re$coldata,add$coldata)
+
+    # merge coldata paying attention to columns and factor levels
+    cd=NULL
+    for (common in intersect(names(re$coldata),names(add$coldata))) {
+      if(is.factor(re$coldata[[common]])) {
+        r = c(as.character(re$coldata[[common]]),as.character(add$coldata[[common]]))
+        r=factor(r,levels=union(levels(re$coldata[[common]]),levels(add$coldata[[common]])))
+      } else {
+        r = c(re$coldata[[common]],add$coldata[[common]])
+      }
+      df=setNames(data.frame(r),common)
+      cd=if (is.null(cd)) df else cbind(cd,df)
+    }
+    for (re.only in setdiff(names(re$coldata),names(add$coldata))) {
+      r=c(re$coldata[[re.only]],rep(NA,nrow(add$coldata)))
+      df=setNames(data.frame(r),re.only)
+      cd=if (is.null(cd)) df else cbind(cd,df)
+    }
+    for (add.only in setdiff(names(add$coldata),names(re$coldata))) {
+      r=c(rep(NA,nrow(re$coldata)),add$coldata[[add.only]])
+      df=setNames(data.frame(r),add.only)
+      cd=if (is.null(cd)) df else cbind(cd,df)
+    }
+    rownames(cd)=c(rownames(re$coldata),rownames(add$coldata))
+    re$coldata=cd
 
     for (n in names(re$data)) re$data[[n]]=cbind(re$data[[n]],add$data[[n]])
 
@@ -298,12 +399,23 @@ DropSlot=function(data,pattern=NULL) {
 #' @param name the slot name
 #' @param matrix the data matrix for the new slot
 #' @param set.to.default set the new slot as the default slot?
+#' @param warn issue a warning if the slot name already exists and is overwritten
 #' @export
-AddSlot=function(data,name,matrix,set.to.default=FALSE) {
-  if (!all(colnames(matrix)==colnames(data$data$count))) stop("Column names do not match!")
-  if (!all(rownames(matrix)==rownames(data$data$count))) stop("Row names do not match!")
+AddSlot=function(data,name,matrix,set.to.default=FALSE,warn=TRUE) {
   if (!is.matrix(matrix)) stop("Must be a matrix!")
+  if (!all(colnames(matrix)==colnames(data$data$count))) stop("Column names do not match!")
+
+  rownames(matrix)=Genes(data,rownames(matrix),use.symbols=FALSE)
+  missing=setdiff(rownames(data$data$count),rownames(matrix))
+  if (length(missing>0)) {
+    warning(sprintf("Could not find all genes in matrix, setting to 0 (n=%d missing, e.g. %s)!",length(missing),paste(head(missing,5),collapse=",")))
+    matrix = rbind(matrix,matrix(0,nrow=length(missing),ncol=ncol(matrix),dimnames=list(missing,colnames(matrix))))
+  }
+  matrix=matrix[rownames(data$data$count),]
+  if (!all(rownames(matrix)==rownames(data$data$count))) stop("Row names do not match!")
+
   if (grepl(".",name,fixed=TRUE)) stop("Name may not contain a dot!")
+  if (!is.null(data$data[[name]])) warning(sprintf("Slot %s already exists, overwriting!",name))
   data$data[[name]]=matrix
   if (set.to.default) DefaultSlot(data)=name
   data
@@ -459,6 +571,44 @@ GeneInfo=function(data,column=NULL,value=NULL) {
 }
 
 
+#' Update symbols using biomaRt
+#'
+#' If your input files only contained ENSEMBL ids, use this to add gene symbols!
+#'
+#' @param data a grandR object
+#' @param species the species the genes belong to (eg "Homo sapiens"); can be NULL, then the species is inferred from gene ids (see details)
+#' @param current.value What it the current value in the symbols field?
+#'
+#' @return a grandR object with updated symbol names
+#'
+#' @details If no species is given, a very simple automatic inference is done, which will only work when having human or mouse ENSEMBL identifiers as gene ids.
+#' If you need to specify species, it must be one of \code{biomaRt::listDatasets(biomaRt::useMart("ensembl"))$dataset}!
+#'
+#' @details Current.value must be one of \code{biomaRt::listAttributes(biomaRt::useMart("ensembl"))$name}!
+#'
+#' @export
+#'
+#' @concept grandr
+UpdateSymbols = function(data,species=NULL,current.value="ensembl_gene_id") {
+
+  checkPackages(c("biomaRt"))
+
+  if (is.null(species)) {
+    if (sum(grepl("ENSG0",Genes(data,use.symbols=FALSE)))>nrow(data)/2) species="hsapiens_gene_ensembl"
+    if (sum(grepl("ENSMUSG0",Genes(data,use.symbols=FALSE)))>nrow(data)/2) species="mmusculus_gene_ensembl"
+  }
+  if (is.null(species)) stop("Cannot recognize species! Specify one of biomaRt::listDatasets(biomaRt::useMart(\"ensembl\"))$dataset")
+
+
+  mart <- biomaRt::useDataset(species, biomaRt::useMart("ensembl"))
+  df <- biomaRt::getBM(filters= "ensembl_gene_id", attributes= c(current.value,"hgnc_symbol"),values=Genes(data,use.symbols = TRUE),mart= mart)
+  map=setNames(df$hgnc_symbol,df[[current.value]])
+
+  GeneInfo(data,"Symbol")=check.and.make.unique(map[as.character(Genes(data,use.symbols = TRUE))],ref=as.character(Genes(data,use.symbols = TRUE)),label="symbols",ref.label=current.value)
+  data
+}
+
+
 #' Get the column annotation table or add additional columns to it
 #'
 #' The columns of a grandR object are samples or cells.
@@ -598,14 +748,22 @@ ToIndex=function(data,gene,regex=FALSE) {
     warning("There were NA genes, removed!");
     gene=gene[!is.na(gene)]
   }
+  if (is.factor(gene)) gene = as.character(gene) # god, I hate factors
+
+
   if (regex) gene=grepl(gene,data$gene.info$Gene)|grepl(gene,data$gene.info$Symbol)
   if (is.null(gene)) return(1:nrow(data))
   if (is.numeric(gene)) return(gene)
   if (is.logical(gene) && length(gene)==nrow(data)) return(which(gene))
   if (all(gene %in% data$gene.info$Gene)) return(setNames(1:nrow(data),data$gene.info$Gene)[gene])
   if (all(gene %in% data$gene.info$Symbol)) return(setNames(1:nrow(data),data$gene.info$Symbol)[gene])
-  warning("Could not find all genes!")
-  if (sum(gene %in% data$gene.info$Gene) > sum(gene %in% data$gene.info$Symbol)) return(setNames(1:nrow(data),data$gene.info$Gene)[intersect(gene,data$gene.info$Gene)])
+  if (sum(gene %in% data$gene.info$Gene) > sum(gene %in% data$gene.info$Symbol)) {
+    mis=setdiff(gene,data$gene.info$Gene)
+    warning(sprintf("Could not find given genes (n=%d missing, e.g. %s)!",length(mis),paste(head(mis,5),collapse=",")))
+    return(setNames(1:nrow(data),data$gene.info$Gene)[intersect(gene,data$gene.info$Gene)])
+  }
+  mis=setdiff(gene,data$gene.info$Symbol)
+  warning(sprintf("Could not find given genes (n=%d missing, e.g. %s)!",length(mis),paste(head(mis,5),collapse=",")))
   return(setNames(1:nrow(data),data$gene.info$Symbol)[intersect(gene,data$gene.info$Symbol)])
 }
 
@@ -620,7 +778,7 @@ ToIndex=function(data,gene,regex=FALSE) {
 #' @param genes Restrict the output table to the given genes
 #' @param ntr.na For columns representing a 4sU naive sample, should types \emph{ntr},\emph{new.count} and \emph{old.count} be 0,0 and count (ntr.na=FALSE; can be any other slot than count) or NA,NA and NA (ntr.na=TRUE)
 #' @param gene.info Should the table contain the \link{GeneInfo} values as well (at the beginning)?
-#' @param summarize Should replicates by summarized? Can only be specified if columns is NULL; either a summarization matrix (\link{GetSummarizeMatrix}) or TRUE (in which case \link{GetSummarizeMatrix}(data) is called)
+#' @param summarize Should replicates by summarized? see details
 #' @param prefix Prepend each column in the output table (except for the gene.info columns) by the given prefix
 #' @param name.by A column name of \link{Coldata}(data). This is used as the rownames of the output table
 #'
@@ -637,6 +795,9 @@ ToIndex=function(data,gene,regex=FALSE) {
 #'
 #' @details To refer to data slots via \code{type}, the mode.slot syntax can be used: Each name is either a data slot, or one of (new,old,total)
 #' followed by a dot followed by a slot. For new or old, the data slot value is multiplied by ntr or 1-ntr. This can be used e.g. to obtain the \emph{new counts}.
+#'
+#' @details The summarization parameter can only be specified if columns is NULL. It is either a summarization matrix (\link{GetSummarizeMatrix}) or
+#' TRUE (in which case \link{GetSummarizeMatrix}(data) is called). If there a NA values, they are imputed as the mean per group!
 #'
 #' @seealso \link{GetData},\link{GetAnalysisTable},\link{DefaultSlot},\link{Genes},\link{GetSummarizeMatrix}
 #'
@@ -700,7 +861,18 @@ GetTable=function(data,type=DefaultSlot(data),columns=NULL,genes=Genes(data),ntr
         rtt=as.data.frame(t(GetData(data,tt,columns=cols,genes,ntr.na = ntr.na,coldata=FALSE, by.rows=FALSE, name.by = name.by)))
         names(rtt)=cols
         if (!is.null(summarize)) {
-          rtt=as.data.frame(as.matrix(rtt) %*% summarize)
+          #rtt=as.data.frame(as.matrix(rtt) %*% summarize)  ## this is without imputation, which is really bad!
+          mrtt=as.matrix(rtt)
+          mrtt=apply(summarize,2,function(cc) {
+            h=mrtt[,cc!=0,drop=FALSE]
+            cc=cc[cc!=0]
+            apply(h,1,function(v) { v[is.na(v)] = mean(v,na.rm = TRUE); sum(v*cc)})
+          })
+          if (!is.matrix(mrtt)) mrtt=matrix(mrtt,nrow=1)
+          mrtt[is.nan(mrtt)]=NA
+          rownames(mrtt)=rownames(rtt)
+          colnames(mrtt)=colnames(summarize)
+          rtt=as.data.frame(mrtt)
         }
         if (length(type[mode.slot])>1) names(rtt)=paste0(names(rtt),".",tt)
         r1=if(is.null(r1)) rtt else cbind(r1,rtt)
@@ -737,17 +909,19 @@ GetTable=function(data,type=DefaultSlot(data),columns=NULL,genes=Genes(data),ntr
   r
 }
 
-#' Obtain a genes x values table as a sparse matrix
+
+#' Obtain a genes x values table as a large matrix
 #'
-#' This is the main function to access slot data for all genes as a sparse matrix.
+#' This is the main function to access slot data for all genes as a (potentially sparse) matrix.
 #'
 #' @param data A grandR object
 #' @param mode.slot Which kind of data to access (see details)
 #' @param columns which columns (i.e. samples or cells) to return (see details)
 #' @param genes Restrict the output table to the given genes
 #' @param name.by A column name of \link{Coldata}(data). This is used as the rownames of the output table
+#' @param summarize Should replicates by summarized? see details
 #'
-#' @return A sparse matrix containing the desired values
+#' @return A (potentially) sparse matrix containing the desired values
 #'
 #' @details To refer to data slots, the mode.slot syntax can be used: It is either a data slot, or one of (new,old,total) followed by a dot followed by a slot. For new or old, the data slot value is multiplied by ntr or 1-ntr. This can be used e.g. to obtain the \emph{new counts}.
 #'
@@ -755,12 +929,16 @@ GetTable=function(data,type=DefaultSlot(data),columns=NULL,genes=Genes(data),ntr
 #' The expression is evaluated in an environment havin the \code{\link{Coldata}}, i.e. you can use names of \code{\link{Coldata}} as variables to
 #' conveniently build a logical vector (e.g., columns=Condition=="x").
 #'
+#' @details The summarization parameter can only be specified if columns is NULL. It is either a summarization matrix (\link{GetSummarizeMatrix}) or
+#' TRUE (in which case \link{GetSummarizeMatrix}(data) is called). If there a NA values, they are imputed as the mean per group!
+#'
 #' @seealso \link{GetData},\link{GetAnalysisTable},\link{DefaultSlot},\link{Genes},\link{GetSummarizeMatrix}
 #'
 #' @export
 #'
+#' @useDynLib grandR, .registration = TRUE
 #' @concept data
-GetSparseMatrix=function(data,mode.slot=DefaultSlot(data),columns=NULL,genes=Genes(data),name.by="Symbol") {
+GetMatrix=function(data,mode.slot=DefaultSlot(data),columns=NULL,genes=Genes(data),name.by="Symbol",summarize=NULL) {
 
   if (!all(check.mode.slot(data,mode.slot))) stop(sprintf("mode.slot %s unknown!",paste(mode.slot[!check.mode.slot(data,mode.slot)],collapse=",")))
   if (length(mode.slot)!=1) stop("Specify exactly one mode.slot!")
@@ -776,11 +954,11 @@ GetSparseMatrix=function(data,mode.slot=DefaultSlot(data),columns=NULL,genes=Gen
   if (length(spl)>1) {tno=spl[1]; mode.slot=spl[2];}
 
   re=data$data[[mode.slot]][genes,columns,drop=FALSE]
-  rownames(re)=Genes(data,genes)
+  rownames(re)=Genes(data,genes,use.symbols = name.by=="Symbol")
 
   conv=function(v) { mode(v)="integer"; v}
 
-  if (is.matrix(re)) {
+  if (is.matrix(re)) {  # plain old R matrix!
     mf = switch(tolower(substr(tno,1,1)),t=1,n=as.matrix(data$data$ntr[genes,columns,drop=FALSE]),o=1-as.matrix(data$data$ntr[genes,columns,drop=FALSE]),stop(paste0(mode.slot," unknown!")))
       mf[is.na(mf)]=if(tolower(substr(tno,1,1))=="n") 0 else 1
     re=re*mf
@@ -789,30 +967,62 @@ GetSparseMatrix=function(data,mode.slot=DefaultSlot(data),columns=NULL,genes=Gen
     } else if (mode.slot=="ntr") {
       re[is.na(re)]=0
     }
-    return(methods::as(re,Class = "dgCMatrix"))
   } else {
-    if (tolower(substr(tno,1,1))=="t") return(re)
     if (tolower(substr(tno,1,1))=="n") {
+
+      X <- Matrix::summary(re)
+      Y <- Matrix::summary(data$data$ntr[genes,columns,drop=FALSE])
+      R=.Call('fastsparsematcompmult',X$i,X$j,X$x,Y$i,Y$j,Y$x)
+
+      re=(Matrix::sparseMatrix(i=R[[1]], j=R[[2]], x=conv(round(R[[3]])),dims=dim(re),
+                                  dimnames=dimnames(re)))
+
       # all that have zero in ntr matrix will be zero, so this is fine
-      sX <- Matrix::summary(re)
-      sY <- Matrix::summary(data$data$ntr[genes,columns,drop=FALSE])
-      sRes <- merge(sX, sY, by=c("i", "j"))
-      return(Matrix::sparseMatrix(i=sRes[,1], j=sRes[,2], x=conv(sRes[,3]*sRes[,4]),dims=dim(re),
+      #sX <- Matrix::summary(re)
+      #sY <- Matrix::summary(data$data$ntr[genes,columns,drop=FALSE])
+      #sRes <- merge(sX, sY, by=c("i", "j"))
+      #return(Matrix::sparseMatrix(i=sRes[,1], j=sRes[,2], x=conv(sRes[,3]*sRes[,4]),dims=dim(re),
+      #                            dimnames=dimnames(re)))
+    } else if (tolower(substr(tno,1,1))=="o") {
+      X <- Matrix::summary(re)
+      Y <- Matrix::summary(data$data$ntr[genes,columns,drop=FALSE])
+      R=.Call('fastsparsematcompmult1m',X$i,X$j,X$x,Y$i,Y$j,Y$x)
+
+      re=(Matrix::sparseMatrix(i=R[[1]], j=R[[2]], x=conv(round(R[[3]])),dims=dim(re),
                                   dimnames=dimnames(re)))
+
+      #sX <- Matrix::summary(re)
+      #sY <- Matrix::summary(data$data$ntr[genes,columns,drop=FALSE])
+      #sRes <- merge(sX, sY, by=c("i", "j"),all.x=TRUE)
+      #sRes[is.na(sRes[,4]),4]=0
+      #sRes[,4]=1-sRes[,4]
+      #sRes=sRes[sRes[,4]>0,]
+      #return(Matrix::sparseMatrix(i=sRes[,1], j=sRes[,2], x=conv(sRes[,3]*sRes[,4]),dims=dim(re),
+      #                            dimnames=dimnames(re)))
     }
-    if (tolower(substr(tno,1,1))=="o") {
-      sX <- Matrix::summary(re)
-      sY <- Matrix::summary(data$data$ntr[genes,columns,drop=FALSE])
-      sRes <- merge(sX, sY, by=c("i", "j"),all.x=TRUE)
-      sRes[is.na(sRes[,4]),4]=0
-      sRes[,4]=1-sRes[,4]
-      sRes=sRes[sRes[,4]>0,]
-      return(Matrix::sparseMatrix(i=sRes[,1], j=sRes[,2], x=conv(sRes[,3]*sRes[,4]),dims=dim(re),
-                                  dimnames=dimnames(re)))
-    }
-    stop(paste0(mode.slot," unknown!"))
   }
 
+  if (!is.null(summarize)) {
+    if (is.logical(summarize) && length(summarize)==1 && !summarize) {
+      summarize=NULL
+    } else {
+      if (is.logical(summarize) && length(summarize)==1 && summarize) summarize=GetSummarizeMatrix(data)
+      summarize=summarize[columns,]
+      summarize=summarize[,colSums(summarize!=0)>1,drop=FALSE]
+    }
+
+    re=apply(summarize,2,function(cc) {
+      h=re[,cc!=0,drop=FALSE]
+      cc=cc[cc!=0]
+      apply(h,1,function(v) { v[is.na(v)] = mean(v,na.rm = TRUE); sum(v*cc)})
+    })
+    if (!is.matrix(re)) re=matrix(re,nrow=1)
+    re[is.nan(re)]=NA
+    rownames(re)=Genes(data,genes,use.symbols = name.by=="Symbol")
+    colnames(re)=colnames(summarize)
+  }
+
+  re
 
 }
 
@@ -876,7 +1086,7 @@ GetData=function(data,mode.slot=DefaultSlot(data),columns=NULL,genes=Genes(data)
     if (length(spl)>1) {tno=spl[1]; mode.slot=spl[2];}
     mf = switch(tolower(substr(tno,1,1)),t=1,n=as.matrix(data$data$ntr[genes,columns]),o=1-as.matrix(data$data$ntr[genes,columns]),stop(paste0(mode.slot," unknown!")))
     if (!ntr.na) {
-      mf[is.na(mf)]=if(tolower(substr(tno,1,1))=="n") 0 else 1
+      mf[is.na(mf)|is.nan(mf)]=if(tolower(substr(tno,1,1))=="n") 0 else 1
     }
     conv=if (mode.slot=="count") function(m) {mode(m) <- "integer";m} else if (mode.slot=="ntr" && !ntr.na) function(m) {m[is.na(m)]=0; m} else function(m) m
 
@@ -895,6 +1105,36 @@ GetData=function(data,mode.slot=DefaultSlot(data),columns=NULL,genes=Genes(data)
   }
   re
 }
+
+
+#' Copy the NTR slot and save under new name
+#'
+#' @param data the grandR object
+#' @param name the name of the new slot
+#'
+#' @return a grandR object
+#' @export
+#'
+#' @concept data
+SaveNtrSlot=function(data,name) {
+  AddSlot(data,name,data$data$ntr)
+}
+
+#' Copy the NTR slot and save under new name
+#'
+#' @param data the grandR object
+#' @param name the name of the new slot
+#'
+#' @return a grandR object
+#' @export
+#'
+#' @concept data
+UseNtrSlot=function(data,name) {
+  if (!check.slot(data,name,allow.ntr = FALSE)) stop("Illegal slot!")
+  data$data$ntr = data$data[[name]]
+  data
+}
+
 
 #' Significant genes
 #'
@@ -1047,6 +1287,7 @@ FindReferences=function(data,reference=NULL, reference.function=NULL,group=NULL,
 #' @param pattern A regular expression that is matched to analysis names
 #' @param name The user-defined analysis name
 #' @param table The analysis table to add
+#' @param by Specify a column that contains gene names or symbols (see details)
 #' @param warn.present Warn if an analysis with the same name is already present (and then overwrite)
 #'
 #' @return Either the analysis names or a grandR data with added/removed slots or the metatable to be used with AddAnalysis
@@ -1055,8 +1296,13 @@ FindReferences=function(data,reference=NULL, reference.function=NULL,group=NULL,
 #' A call to an analysis function might produce more than one table (e.g. because kinetic modeling is done for multiple \link{Condition}s). In this case,
 #' AddAnalysisTable produces more than one analysis table.
 #'
-#' @details \code{AddAnalysis} is usually not called directly by the user, but is
+#' @details \code{AddAnalysis} is in most cases  not called directly by the user, but is
 #' used by analysis methods to add their final result to a grandR object (e.g., \link{FitKinetics},\link{LikelihoodRatioTest},\link{LFC},\link{PairwiseDESeq2}).
+#'
+#' @details If it is called by the user (e.g. to add analysis results from external tools or from the literature, see pulse-chase vignette), then
+#' the user must make sure that either the rownames of the given table can be recognized as genes (names or symbols), or that there is a column in the
+#' table giving genes (this must be specified as the "by" parameter). The table does neither have to be sorted the same way the grandR object is, nor does
+#' it have to be complete. \code{AddAnalysis} will take care or reordering and inserting NA for missing genes (and it will issue a warning in case of missing genes).
 #'
 #' @seealso \link{Slots}, \link{DefaultSlot}
 #'
@@ -1084,9 +1330,21 @@ Analyses=function(data, description=FALSE) {
 
 #' @describeIn Analyses Add an analysis table
 #' @export
-AddAnalysis=function(data,name,table,warn.present=TRUE) {
+AddAnalysis=function(data,name,table,by = NULL, warn.present=TRUE) {
   if (!is.data.frame(table)) stop("Cannot add; analysis table must be a data frame!")
-  if (!all(Genes(data,rownames(table))==Genes(data))) stop("Analysis table must contain row names corresponding to all genes!")
+  #if (!equal(Genes(data,rownames(table)),Genes(data))) stop("Analysis table must contain row names corresponding to all genes!")
+
+  if (!is.null(by)) {
+    row.names(table) = table[,by]
+    table <- table[, !names(table) %in% by, drop = FALSE]
+  }
+
+  if (!equal(Genes(data,rownames(table)),Genes(data))) {
+      warning("Analysis table and grandR object does not have the same set of genes! Watch out for NA values!")
+    table <- table[Genes(data), ]
+    rownames(table) = Genes(data)
+  }
+
   if (is.null(data$analysis)) data$analysis=list()
   if (is.null(data$analysis[[name]])) {
     data$analysis[[name]]=table

@@ -13,12 +13,13 @@ PlotHeatmap(
   transform = "Z",
   cluster.genes = TRUE,
   cluster.columns = FALSE,
-  label.genes = length(genes) <= 50,
+  label.genes = NULL,
   xlab = NULL,
   breaks = NULL,
   colors = NULL,
   title = NULL,
   return.matrix = FALSE,
+  na.to = NA,
   ...
 )
 }
@@ -50,6 +51,8 @@ PlotHeatmap(
 \item{title}{the title for the plot; can be NULL}
 
 \item{return.matrix}{if TRUE, return a list containing the data matrix and the heatmap instead of the heatmap alone}
+
+\item{na.to}{convert NA values in the matrix to this value immediately before computing the heatmap}
 
 \item{...}{additional parameters forwarded to \link[ComplexHeatmap]{Heatmap}}
 }

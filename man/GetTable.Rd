@@ -29,7 +29,7 @@ GetTable(
 
 \item{gene.info}{Should the table contain the \link{GeneInfo} values as well (at the beginning)?}
 
-\item{summarize}{Should replicates by summarized? Can only be specified if columns is NULL; either a summarization matrix (\link{GetSummarizeMatrix}) or TRUE (in which case \link{GetSummarizeMatrix}(data) is called)}
+\item{summarize}{Should replicates by summarized? see details}
 
 \item{prefix}{Prepend each column in the output table (except for the gene.info columns) by the given prefix}
 
@@ -54,6 +54,9 @@ conveniently build a logical vector (e.g., columns=Condition=="x").
 
 To refer to data slots via \code{type}, the mode.slot syntax can be used: Each name is either a data slot, or one of (new,old,total)
 followed by a dot followed by a slot. For new or old, the data slot value is multiplied by ntr or 1-ntr. This can be used e.g. to obtain the \emph{new counts}.
+
+The summarization parameter can only be specified if columns is NULL. It is either a summarization matrix (\link{GetSummarizeMatrix}) or
+TRUE (in which case \link{GetSummarizeMatrix}(data) is called). If there a NA values, they are imputed as the mean per group!
 }
 \examples{
 sars <- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),

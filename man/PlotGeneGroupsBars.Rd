@@ -10,7 +10,8 @@ PlotGeneGroupsBars(
   slot = DefaultSlot(data),
   columns = NULL,
   show.CI = FALSE,
-  xlab = NULL
+  xlab = NULL,
+  transform = NULL
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ PlotGeneGroupsBars(
 \item{show.CI}{show confidence intervals; one of TRUE/FALSE (default: FALSE)}
 
 \item{xlab}{The names to show at the x axis;}
+
+\item{transform}{function that is called on the data frame directly before plotting (can be NULL)}
 }
 \value{
 a ggplot object.

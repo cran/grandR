@@ -4,12 +4,14 @@
 \alias{PlotConversionFreq}
 \title{Diagnostic plot for conversion frequencies}
 \usage{
-PlotConversionFreq(data, category, max.columns = 120)
+PlotConversionFreq(data, category, sample = NULL, max.columns = 120)
 }
 \arguments{
 \item{data}{the grandR object}
 
 \item{category}{show a specific category (see \link{GetDiagnosticParameters}); cannot be NULL}
+
+\item{sample}{compare subreads for a specific sample; can be NULL, then compare all samples per subread}
 
 \item{max.columns}{if there are more columns (samples for bulk, cells for single cell) than this, show boxplots instead of points}
 }

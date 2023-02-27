@@ -24,7 +24,9 @@ Each function takes two parameters, the first being the original column in the \
 
 Semantics.time is such a predefined function: Contents such as 3h or 30min are converted into a numerical value (in hours), and no4sU is converted into 0.
 
-By default, this is used for the names duration.4sU and Experimental.time
+Semantics.concentration is such a predefined function: Contents such as 200uM or 1mM are converted into a numerical value (in uM), and no4sU is converted into 0.
+
+By default, Semantics.time is used for the names duration.4sU and Experimental.time, and Semantics.concentration is used for concentration.4sU
 }
 \examples{
 

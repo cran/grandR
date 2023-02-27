@@ -207,7 +207,7 @@ f.new=function(t,s,d) s/d*(1-exp(-t*d))
 #'
 #' @param data A grandR object
 #' @param name.prefix the prefix of the analysis name to be stored in the grandR object
-#' @param type Which method to use (either one of "full","ntr","lm")
+#' @param type Which method to use (either one of "full","ntr","lm", "chase")
 #' @param slot The data slot to take expression values from
 #' @param time The column in the column annotation table representing the labeling duration
 #' @param CI.size A number between 0 and 1 representing the size of the confidence interval
@@ -231,6 +231,9 @@ f.new=function(t,s,d) s/d*(1-exp(-t*d))
 #'   \item{\link{FitKineticsGeneNtr}: maximum a posteriori fit on the NTR posterior transformed to the degradation rate; as it is based on the NTR only, it is independent on proper normalization; assumes steady state; theoretically well justified}
 #' }
 #'
+#' @details Pulse-chase designs are fit using \link{FitKineticsGeneLeastSquares} while only considering the drop of labeled RNA. Note that in this case the notion "new" / "old" RNA is misleading,
+#' since labeled RNA corresponds to pre-existing RNA!
+#'
 #' @details This function is flexible in what to put in the analysis table. You can specify the statistics using return.fields and return.extra (see \code{\link{kinetics2vector}})
 #'
 #' @seealso \link{FitKineticsGeneNtr}, \link{FitKineticsGeneLeastSquares}, \link{FitKineticsGeneLogSpaceLinear}
@@ -248,9 +251,13 @@ f.new=function(t,s,d) s/d*(1-exp(-t*d))
 #' @export
 #'
 #' @concept kinetics
-FitKinetics=function(data,name.prefix="kinetics",type=c("nlls","ntr","lm"),slot=DefaultSlot(data),time=Design$dur.4sU,CI.size=0.95,return.fields=c("Synthesis","Half-life"),return.extra=NULL,...) {
+FitKinetics=function(data,name.prefix="kinetics",type=c("nlls","ntr","lm","chase"),slot=DefaultSlot(data),time=Design$dur.4sU,CI.size=0.95,return.fields=c("Synthesis","Half-life"),return.extra=NULL,...) {
 
-  fun=switch(tolower(type[1]),ntr=FitKineticsGeneNtr,nlls=FitKineticsGeneLeastSquares,lm=FitKineticsGeneLogSpaceLinear)
+  fun=switch(tolower(type[1]),
+             ntr=FitKineticsGeneNtr,
+             nlls=FitKineticsGeneLeastSquares,
+             chase=function(...) FitKineticsGeneLeastSquares(...,chase=TRUE),
+             lm=FitKineticsGeneLogSpaceLinear)
 
   if (is.null(fun)) stop(sprintf("Type %s unknown!",type))
   result=plapply(Genes(data),
@@ -289,6 +296,7 @@ FitKinetics=function(data,name.prefix="kinetics",type=c("nlls","ntr","lm"),slot=
 #' @param gene The gene for which to fit the model
 #' @param slot The data slot to take expression values from
 #' @param time The column in the column annotation table representing the labeling duration
+#' @param chase is this a pulse-chase experiment? (see details)
 #' @param CI.size A number between 0 and 1 representing the size of the confidence interval
 #' @param steady.state either a named list of logical values representing conditions in steady state or not, or a single logical value for all conditions
 #' @param use.old a logical vector to exclude old RNA from specific time points
@@ -334,6 +342,9 @@ FitKinetics=function(data,name.prefix="kinetics",type=c("nlls","ntr","lm"),slot=
 #' @details This function finds s and d such that the squared error between the observed values of old and new RNA and their corresponding functions
 #' is minimized. For that to work, data has to be properly normalized.
 #'
+#' @details For pulse-chase designs, only the drop of the labeled RNA is considered. Note that in this case the notion "new" / "old" RNA is misleading,
+#' since labeled RNA corresponds to pre-existing RNA!
+#'
 #' @seealso \link{FitKinetics}, \link{FitKineticsGeneLogSpaceLinear}, \link{FitKineticsGeneNtr}
 #'
 #' @examples
@@ -345,7 +356,8 @@ FitKinetics=function(data,name.prefix="kinetics",type=c("nlls","ntr","lm"),slot=
 #' @export
 #'
 #' @concept kinetics
-FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Design$dur.4sU,CI.size=0.95,steady.state=NULL,use.old=TRUE,use.new=TRUE, maxiter=250, compute.residuals=TRUE) {
+FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Design$dur.4sU,chase=FALSE,CI.size=0.95,steady.state=NULL,use.old=TRUE,use.new=TRUE, maxiter=250, compute.residuals=TRUE) {
+
     # residuals of the functions for usage with nls.lm
     res.fun.equi=function(par,old,new) {
         s=par[1]
@@ -353,6 +365,12 @@ FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Desig
         f=function(t) f.old.equi(t,s,d)
         g=function(t) f.new(t,s,d)
         c(old$Value-f(old$time),new$Value-g(new$time))
+    }
+    res.fun.chase=function(par,old,new) {
+      s=par[1]
+      d=par[2]
+      f=function(t) f.old.equi(t,s,d)
+      c(rep(0,nrow(old)),new$Value-f(new$time))
     }
 
     res.fun.nonequi=function(par,old,new) {
@@ -391,13 +409,16 @@ FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Desig
 
     stopifnot(time %in% names(Coldata(data)))
 
-    newdf=GetData(data,mode.slot=paste0("new.",slot),genes=gene,ntr.na = FALSE)
+    lvl = median(GetData(data,mode.slot=slot,genes=gene,ntr.na = FALSE)$Value)
+
+    newdf=GetData(data,mode.slot=if (chase) "ntr" else paste0("new.",slot),genes=gene,ntr.na = FALSE)
     newdf$use=1:nrow(newdf) %in% (1:nrow(newdf))[use.new]
     newdf$time=newdf[[time]]
     if (is.null(newdf$Condition)) {
         newdf$Condition="Data"
         if (length(steady.state)==1) names(steady.state)="Data"
     }
+    if (chase) newdf=newdf[!newdf$no4sU,]
     newdf=plyr::dlply(newdf,"Condition",function(s) correct(s))
 
     correct=function(s) {
@@ -409,16 +430,21 @@ FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Desig
     olddf$use=1:nrow(olddf) %in% (1:nrow(olddf))[use.old]
     olddf$time=olddf[[time]]
     if (is.null(olddf$Condition)) olddf$Condition="Data"
+    if (chase) {
+      olddf=olddf[!olddf$no4sU,]
+      olddf$use=FALSE
+    }
     olddf=plyr::dlply(olddf,"Condition",function(s) correct(s))
 
 
     fit.equi=function(ndf,odf) {
 
+        res.fun = if (chase) res.fun.chase else res.fun.equi
         tinit=if (sum(ndf$Value>0)==0) min(ndf$time[ndf$time>0]) else min(ndf$time[ndf$Value>0])
         init.d=mean(-log(1-(0.1+ndf[ndf$time==tinit,"Value"])/(0.2+ndf[ndf$time==tinit,"Value"]+odf[odf$time==tinit,"Value"])))
         init.s=init.d*mean(odf[odf$time==tinit,"Value"])
         model.p=minpack.lm::nls.lm(c(init.s,init.d),lower=c(0,0.01),
-                       fn=res.fun.equi,
+                       fn=res.fun,
                        old=odf[odf$use,],
                        new=ndf[ndf$use,],
                        control=minpack.lm::nls.lm.control(maxiter = maxiter))
@@ -428,7 +454,7 @@ FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Desig
         if (!is.matrix(conf.p)) conf.p=matrix(c(NA,NA,NA,NA),nrow=2)
         par=setNames(model.p$par,c("s","d"))
         rmse=sqrt(model.p$deviance/(nrow(ndf)+nrow(odf)))
-        fvec=res.fun.equi(par,odf,ndf)
+        fvec=res.fun(par,odf,ndf)
         n=nrow(odf)
         rmse.old=sqrt(sum(fvec[1:n]^2)/n)
         rmse.new=sqrt(sum(fvec[(n+1):(n*2)]^2)/n)
@@ -447,24 +473,28 @@ FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Desig
             #norm.fac=daply(df,.(Name),function(sub) s/d / sum(sub$Value))
             #modifier=data.frame(Name=names(norm.fac),Time=time,Norm.factor=norm.fac)
 
-            resi=res.fun.equi(model.p$par,odf[odf$use,],ndf[ndf$use,])
-            modval=c(odf[odf$use,"Value"],ndf[ndf$use,"Value"])-resi
-            residuals=data.frame(Name=c(as.character(odf$Name[odf$use]),as.character(ndf$Name[ndf$use])),Type=c(rep("old",nrow(ndf)),rep("new",nrow(odf))),Absolute=resi,Relative=resi/modval)
+            resi=res.fun(model.p$par,odf,ndf)
+            modval=c(odf[,"Value"],ndf[,"Value"])-resi
+            residuals=data.frame(Name=c(as.character(odf$Name),as.character(ndf$Name)),Type=c(rep("old",nrow(ndf)),rep("new",nrow(odf))),Absolute=resi,Relative=resi/modval)
         }
         total=sum(ndf$Value)+sum(odf$Value)
+        syn = if (chase) lvl*unname(par['d']) else unname(par['s']) # in chase designs, at time 0 new RNA might not be at steady state level!
+
         list(data=df,
              residuals=residuals,
-             Synthesis=unname(par['s']),
+             Synthesis=syn,
              Degradation=unname(par['d']),
              `Half-life`=log(2)/unname(par['d']),
-             conf.lower=c(Synthesis=unname(conf.p[1,1]),Degradation=unname(conf.p[2,1]),`Half-life`=unname(log(2)/(conf.p[2,2]))),
-             conf.upper=c(Synthesis=unname(conf.p[1,2]),Degradation=unname(conf.p[2,2]),`Half-life`=unname(log(2)/(conf.p[2,1]))),
-             f0=unname(par['s']/par['d']),
+             conf.lower=c(Synthesis=max(0,unname(conf.p[1,1])),Degradation=max(0,unname(conf.p[2,1])),`Half-life`=unname(log(2)/(conf.p[2,2]))),
+             conf.upper=c(Synthesis=unname(conf.p[1,2]),Degradation=unname(conf.p[2,2]),`Half-life`=unname(log(2)/max(0,(conf.p[2,1])))),
+             f0=unname(syn/par['d']),
              logLik=logLik.nls.lm(model.p),
              rmse=rmse, rmse.new=rmse.new, rmse.old=rmse.old,
              total=total,type="equi")
     }
     fit.nonequi=function(ndf,odf) {
+        if (chase) stop("All conditions must be at steady state for pulse chase designs!")
+
         oind=union(which(odf$time==0),which(odf$use))
         nind=union(which(ndf$time==0),which(ndf$use))
 
@@ -505,9 +535,9 @@ FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Desig
             #})
             #
             #modifier=data.frame(Name=names(norm.fac),Time=time,Norm.factor=norm.fac)
-            resi=res.fun.nonequi(model.m$par,odf[odf$use,],ndf[ndf$use,])
-            modval=c(odf[odf$use,"Value"],ndf[ndf$use,"Value"])-resi
-            residuals=data.frame(Name=c(as.character(odf$Name[odf$use]),as.character(ndf$Name[ndf$use])),Type=c(rep("old",nrow(ndf)),rep("new",nrow(odf))),Absolute=resi,Relative=resi/modval)
+            resi=res.fun.nonequi(model.m$par,odf,ndf)
+            modval=c(odf[,"Value"],ndf[,"Value"])-resi
+            residuals=data.frame(Name=c(as.character(odf$Name),as.character(ndf$Name)),Type=c(rep("old",nrow(ndf)),rep("new",nrow(odf))),Absolute=resi,Relative=resi/modval)
         }
         total=sum(ndf$Value)+sum(odf$Value)
         list(data=df,
@@ -751,6 +781,7 @@ FitKineticsGeneNtr=function(data,gene,slot=DefaultSlot(data),time=Design$dur.4sU
 
     t=a[,time]
     use=t>0
+    names=a$Name[use]
     c=droplevels(a$Condition[use])
     a=a$Value[use]
     b=b$Value[use]
@@ -777,7 +808,6 @@ FitKineticsGeneNtr=function(data,gene,slot=DefaultSlot(data),time=Design$dur.4sU
         pbounds=if (equi) bounds else c(max(bounds[1],log(f0/total[ind])/t[ind]),bounds[2]) # ensure that: d> log(f0/total[ind])
         d=optimize(ploglik,pbounds,maximum=T)$maximum
         max=ploglik(d)
-        df=data.frame(alpha=a[ind],beta=b[ind],t=t[ind])
         if (exact.ci) {
             plik=function(x) pmax(0,sapply(x,function(xx) exp(loglik(xx,a=a[ind],b=b[ind],t=t[ind])-max)))
             inte = function(u) integrate(plik,pbounds[1],u)$value
@@ -797,12 +827,18 @@ FitKineticsGeneNtr=function(data,gene,slot=DefaultSlot(data),time=Design$dur.4sU
             s=median(ntr/(1-exp(-t*d))*d*total)
             s.low=median(ntr/(1-exp(-t*lower))*lower*total)
             s.up=median(ntr/(1-exp(-t*upper))*upper*total)
-        }
-        else {
+        } else {
             s=f0*d
             s.low=f0*lower
             s.up=f0*upper
         }
+
+        df=data.frame(Name=names,alpha=a,beta=b,t=t)
+        df$Quantile = pbeta(1-exp(-df$t*d),df$alpha,df$beta)
+        df$Expected.NTR=1-exp(-df$t*d)
+        df$Observed.NTR=(df$alpha-1)/(df$alpha+df$beta-2)
+        df$Absolute.Residual = df$Observed.NTR-df$Expected.NTR
+        df$Relative.Residual = df$Absolute.Residual/df$Expected.NTR
 
         list(data=df,
              Synthesis=s,
@@ -832,7 +868,7 @@ FitKineticsGeneNtr=function(data,gene,slot=DefaultSlot(data),time=Design$dur.4sU
 #' @param time.name The name in the column annotation table to put the calibrated labeling durations
 #' @param time.conf.name The name in the column annotation table to put the confidence values for the labeling durations (half-size of the confidence interval)
 #' @param CI.size The level for confidence intervals
-#' @param steady.state either a named list of logical values representing conditions in steady state or not, or a single logical value for all conditions
+#' @param compute.confidence should CIs be computed or not?
 #' @param n.estimate the times are calibrated with the top n expressed genes
 #' @param n.iter the maximal number of iterations for the numerical optimization
 #' @param verbose verbose output
@@ -854,12 +890,11 @@ FitKineticsGeneNtr=function(data,gene,slot=DefaultSlot(data),time=Design$dur.4sU
 #' @export
 #'
 #' @concept recalibration
-CalibrateEffectiveLabelingTimeKineticFit=function(data,slot=DefaultSlot(data),time=Design$dur.4sU,time.name="calibrated_time",time.conf.name="calibrated_time_conf",CI.size=0.95,steady.state=NULL,n.estimate=1000, n.iter=10000, verbose=FALSE,...) {
+CalibrateEffectiveLabelingTimeKineticFit=function(data,slot=DefaultSlot(data),time=Design$dur.4sU,time.name="calibrated_time",time.conf.name="calibrated_time_conf",CI.size=0.95,compute.confidence=FALSE,n.estimate=1000, n.iter=10000, verbose=FALSE,...) {
 
     conds=Coldata(data)
     if (is.null(conds$Condition)) {
         conds$Condition=factor("Data")
-        if (length(steady.state)==1) names(steady.state)="Data"
     }
     re=matrix(NA,ncol=2,nrow=nrow(conds),dimnames = list(conds$Name,c(time.name,time.conf.name)))
     for (cond in levels(conds$Condition)) {
@@ -872,7 +907,7 @@ CalibrateEffectiveLabelingTimeKineticFit=function(data,slot=DefaultSlot(data),ti
         totals=rowSums(GetTable(sub,type=slot))
         sub=FitKinetics(sub,type='nlls',slot=slot,time=time,return.fields="Half-life")
         HLs=GetAnalysisTable(sub,prefix.by.analysis = FALSE)$`Half-life`
-        HL.cat=cut(HLs,c(0,2,4,6,8,Inf),include.lowest = TRUE)
+        HL.cat=cut(HLs,c(seq(0,2*max(Coldata(data,time)),length.out=5),Inf),include.lowest = TRUE)
         fil=plyr::ddply(data.frame(Gene=Genes(sub),totals,HL.cat),plyr::.(HL.cat),function(s) {
            threshold=sort(s$totals,decreasing = TRUE)[min(length(s$totals),ceiling(n.estimate/length(unique(HL.cat))))]
            data.frame(Gene=s$Gene,use=s$totals>=threshold)
@@ -882,11 +917,12 @@ CalibrateEffectiveLabelingTimeKineticFit=function(data,slot=DefaultSlot(data),ti
         sub=FilterGenes(sub,use=genes)
         sub=DropAnalysis(sub)
 
+        n.eval=0
         opt.fun=function(times) {
             tt=init
             tt[use]=times
             Coldata(sub,Design$dur.4sU)=tt
-            fit=FitKinetics(sub,return.fields='logLik',slot=slot,steady.state=steady.state[[cond]],...)
+            fit=FitKinetics(sub,return.fields='logLik',slot=slot,...)
         #    fit=FitKinetics(sub,return.fields='logLik',slot=slot,steady.state=steady.state[[cond]])
             re=sum(GetAnalysisTable(fit,gene.info=FALSE)[,1])
         #    fit=FitKinetics(sub,return.fields='Half-life',compute.residuals=TRUE,slot=slot,steady.state=steady.state[[cond]],return.extra = function(s) setNames(s$residuals$Relative,paste0("Residuals.",s$residuals$Name))[s$residuals$Type=="new"])
@@ -898,6 +934,9 @@ CalibrateEffectiveLabelingTimeKineticFit=function(data,slot=DefaultSlot(data),ti
             #cat(" ")
             #cat(re)
             #cat("\n")
+            n.eval<<-n.eval+1
+            if (verbose && n.eval%%10==0) cat(sprintf("Optimization round %d (current solution: %s, loglik: %.2f)...\n",n.eval,paste(sprintf("%.2f",times),collapse = ","),re))
+
             re
         }
 
@@ -908,19 +947,25 @@ CalibrateEffectiveLabelingTimeKineticFit=function(data,slot=DefaultSlot(data),ti
         opt.fun2=function(min) -opt.fun(init[use]-min)
         mini=optimize(opt.fun2,interval=c(0,min(init[use])))$minimum
         init[use]=init[use]-mini
+        if (verbose) cat(sprintf("First step done.\n"))
 
         #fit=optim(init[use],fn=opt.fun,hessian=FALSE, control=list(fnscale=-1,maxit=n.iter),method="Nelder-Mead")
-        fit=optim(init[use],fn=opt.fun,hessian=FALSE, control=list(fnscale=-1,maxit=n.iter),method="Nelder-Mead")
-        if (fit$convergence!=0) stop(sprintf("Did not converge!"))
-        fit$hessian=numDeriv::hessian(opt.fun,fit$par)
-        conf=try(sd.from.hessian(fit$hessian)*qnorm(1-(1-CI.size)/2),silent=TRUE)
+        ui=diag(length(init[use]))
+        ci=rep(0,length(init[use]))
+        fit=constrOptim(init[use],f=opt.fun,ui=ui,ci=ci,hessian=FALSE, control=list(fnscale=-1,maxit=n.iter),method="Nelder-Mead")
+        if (fit$convergence!=0) warning(sprintf("Did not converge for %s. Maybe increase n.iter!",cond))
 
         tt=init
         tt[use]=fit$par
         re[as.character(Coldata(sub)$Name),time.name]=tt
         tt=rep(0,length(tt))
-        tt[use]=conf
-        re[as.character(Coldata(sub)$Name),time.conf.name]=tt
+
+        if (compute.confidence) {
+          fit$hessian=numDeriv::hessian(opt.fun,fit$par)
+          conf=try(sd.from.hessian(fit$hessian)*qnorm(1-(1-CI.size)/2),silent=TRUE)
+          tt[use]=conf
+          re[as.character(Coldata(sub)$Name),time.conf.name]=tt
+        }
     }
     data=Coldata(data,re)
     data
@@ -1011,7 +1056,7 @@ CalibrateEffectiveLabelingTimeMatchHalflives=function(data,reference.halflives=N
 #'
 #' @param data the grandR object
 #' @param name.prefix the prefix for the new analysis name; a dot and the column names of the contrast matrix are appended; can be NULL (then only the contrast matrix names are used)
-#' @param reference.columns a reference matrix usually generated by \link{FindReferences} to define reference samples for each sample (see details)
+#' @param reference.columns a reference matrix usually generated by \link{FindReferences} to define reference samples for each sample (see details), can be NULL if all conditions are at steady state
 #' @param slot the data slot to take f0 and totals from
 #' @param conditions character vector of all condition names to estimate kinetics for; can be NULL (i.e. all conditions)
 #' @param time.labeling the column in the column annotation table denoting the labeling duration or the labeling duration itself
@@ -1022,7 +1067,7 @@ CalibrateEffectiveLabelingTimeMatchHalflives=function(data,reference.halflives=N
 #' @param CI.size A number between 0 and 1 representing the size of the credible interval
 #' @param seed Seed for the random number generator
 #' @param dispersion overdispersion parameter for each gene; if NULL this is estimated from data
-#' @param hierarchical Take the NTR from the hierarchical Bayesian model (see details)
+#' @param sample.level Define how the NTR is sampled from the hierarchical Bayesian model (must be 0,1, or 2; see details)
 #' @param correct.labeling Labeling times have to be unique; usually execution is aborted, if this is not the case; if this is set to true, the median labeling time is assumed
 #' @param verbose Vebose output
 #'
@@ -1036,8 +1081,10 @@ CalibrateEffectiveLabelingTimeMatchHalflives=function(data,reference.halflives=N
 #' is NULL, then the labeling time of the A or B samples is used (e.g. useful if labeling was started concomitantly with the perturbation, and the steady state samples
 #' are unperturbed samples).
 #'
-#' @details By default, the hierarchical Bayesian model is estimated. If hierarchical = FALSE, the NTRs are sampled from a beta distribution
-#' that approximates the mixture of betas from the replicate samples.
+#' @details By default, the hierarchical Bayesian model is estimated. If sample.level = 0, the NTRs are sampled from a beta distribution
+#' that approximates the mixture of betas from the replicate samples. If sample.level = 1, only the first level from the hierarchical model
+#' is sampled (corresponding to the uncertainty of estimating the biological variability). If sample.level = 2, the first and second levels
+#' are estimated (corresponding to the full hierarchical model).
 #'
 #' @details if N is set to 0, then no sampling from the posterior is performed, but the transformed MAP estimates are returned
 #'
@@ -1054,7 +1101,11 @@ CalibrateEffectiveLabelingTimeMatchHalflives=function(data,reference.halflives=N
 #'
 #' @export
 #' @concept snapshot
-FitKineticsSnapshot=function(data,name.prefix="Kinetics",reference.columns,slot=DefaultSlot(data),conditions=NULL,time.labeling=Design$dur.4sU,time.experiment=NULL, sample.f0.in.ss=TRUE,N=10000,N.max=N*10,CI.size=0.95,seed=1337, dispersion=NULL, hierarchical=TRUE, correct.labeling=FALSE, verbose=FALSE) {
+FitKineticsSnapshot=function(data,name.prefix="Kinetics",reference.columns=NULL,
+                             slot=DefaultSlot(data),conditions=NULL,
+                             time.labeling=Design$dur.4sU,time.experiment=NULL,
+                             sample.f0.in.ss=TRUE,N=10000,N.max=N*10,CI.size=0.95,seed=1337, dispersion=NULL,
+                             sample.level=2, correct.labeling=FALSE, verbose=FALSE) {
   if (!check.slot(data,slot)) stop("Illegal slot definition!")
   if(!is.null(seed)) set.seed(seed)
 
@@ -1066,9 +1117,10 @@ FitKineticsSnapshot=function(data,name.prefix="Kinetics",reference.columns,slot=
 
   for (n in conditions) {
     if (verbose) cat(sprintf("Computing snapshot kinetics for %s...\n",n))
-    A=Condition(data)==n
+    A=Condition(data)==n & !Coldata(data,"no4sU")
 
-    ss=if (is.matrix(reference.columns)) apply(reference.columns[,Columns(data,A),drop=FALSE]==1,1,any)
+    if (is.null(reference.columns)) ss=A
+    if (is.matrix(reference.columns)) ss=apply(reference.columns[,Columns(data,A),drop=FALSE]==1,1,any)
     if (length(Columns(data,ss))==0) stop("No reference columns found; check your reference.columns parameter!")
     dispersion = if (sum(ss)==1) rep(0.1,nrow(data)) else if (!is.null(dispersion)) rep(dispersion,length.out=nrow(data)) else estimate.dispersion(GetTable(data,type="count",columns = ss))
     if (verbose) {
@@ -1095,11 +1147,12 @@ FitKineticsSnapshot=function(data,name.prefix="Kinetics",reference.columns,slot=
 
     re=plapply(1:nrow(data),function(i) {
       #for (i in 1:nrow(data)) { print (i);
-      fit.A=FitKineticsGeneSnapshot(data=data,gene=i,columns=A,dispersion=dispersion[i],reference.columns=reference.columns,slot=slot,time.labeling=time.labeling,time.experiment=time.experiment,sample.f0.in.ss=sample.f0.in.ss,hierarchical=hierarchical,beta.prior=beta.prior,return.samples=TRUE,N=N,N.max=N.max,CI.size=CI.size,correct.labeling=correct.labeling)
+      fit.A=FitKineticsGeneSnapshot(data=data,gene=i,columns=A,dispersion=dispersion[i],reference.columns=reference.columns,slot=slot,time.labeling=time.labeling,time.experiment=time.experiment,sample.f0.in.ss=sample.f0.in.ss,sample.level=sample.level,beta.prior=beta.prior,return.samples=TRUE,N=N,N.max=N.max,CI.size=CI.size,correct.labeling=correct.labeling)
       samp.a=fit.A$samples
 
       N=nrow(samp.a)
-      if (N==0 || is.null(fit.A$samples)) return(c(
+      if (N==0 || is.null(fit.A$samples))
+        return(c(
         s=unname(fit.A$s),
         HL=unname(log(2)/fit.A$d),
         s.cred.lower=-Inf,
@@ -1107,6 +1160,7 @@ FitKineticsSnapshot=function(data,name.prefix="Kinetics",reference.columns,slot=
         HL.cred.lower=-Inf,
         HL.cred.upper=Inf
       ))
+
       samp.a=samp.a[1:N,,drop=FALSE]
 
       sc=quantile(samp.a[,'s'],c(0.5-CI.size/2,0.5+CI.size/2))
@@ -1126,7 +1180,6 @@ FitKineticsSnapshot=function(data,name.prefix="Kinetics",reference.columns,slot=
 
     re.df=as.data.frame(t(simplify2array(re)))
     rownames(re.df)=Genes(data)
-
     data=AddAnalysis(data,name = if (is.null(name.prefix)) n else if (n=="") name.prefix else paste0(name.prefix,".",n),table = re.df)
   }
   data
@@ -1146,7 +1199,7 @@ FitKineticsSnapshot=function(data,name.prefix="Kinetics",reference.columns,slot=
 #' @param time.labeling the column in the column annotation table denoting the labeling duration or the labeling duration itself
 #' @param time.experiment the column in the column annotation table denoting the experimental time point (can be NULL, see details)
 #' @param sample.f0.in.ss whether or not to sample f0 under steady state conditions
-#' @param hierarchical Take the NTR from the hierarchical Bayesian model (see details)
+#' @param sample.level Define how the NTR is sampled from the hierarchical Bayesian model (must be 0,1, or 2; see details)
 #' @param beta.prior The beta prior for the negative binomial used to sample counts, if NULL, a beta distribution is fit to all expression values and given dispersions
 #' @param return.samples return the posterior samples of the parameters?
 #' @param return.points return the point estimates per replicate as well?
@@ -1161,8 +1214,10 @@ FitKineticsSnapshot=function(data,name.prefix="Kinetics",reference.columns,slot=
 #' \code{time.experiment} is NULL, then the labeling time of the samples is used (e.g. useful if labeling was started concomitantly with
 #' the perturbation, and the reference samples are unperturbed samples).
 #'
-#' @details By default, the hierarchical Bayesian model is estimated. If hierarchical = FALSE, the NTRs are sampled from a beta distribution
-#' that approximates the mixture of betas from the replicate samples.
+#' @details By default, the hierarchical Bayesian model is estimated. If sample.level = 0, the NTRs are sampled from a beta distribution
+#' that approximates the mixture of betas from the replicate samples. If sample.level = 1, only the first level from the hierarchical model
+#' is sampled (corresponding to the uncertainty of estimating the biological variability). If sample.level = 2, the first and second levels
+#' are estimated (corresponding to the full hierarchical model).
 #'
 #' @details Columns can be given as a logical, integer or character vector representing a selection of the columns (samples or cells).
 #' The expression is evaluated in an environment having the \code{\link{Coldata}}, i.e. you can use names of \code{\link{Coldata}} as variables to
@@ -1179,7 +1234,7 @@ FitKineticsGeneSnapshot=function(data,gene,columns=NULL,
                              dispersion=NULL,
                              slot=DefaultSlot(data),time.labeling=Design$dur.4sU,time.experiment=NULL,
                              sample.f0.in.ss=TRUE,
-                             hierarchical=TRUE,
+                             sample.level=2,
                              beta.prior=NULL,
                              return.samples=FALSE,
                              return.points=FALSE,
@@ -1188,25 +1243,27 @@ FitKineticsGeneSnapshot=function(data,gene,columns=NULL,
                              correct.labeling=FALSE
                              ) {
 
+  if (!sample.level %in% c(0,1,2)) stop("Sample level must be 0,1 or 2!")
+
   columns=substitute(columns)
   columns=if (is.null(columns)) colnames(data) else eval(columns,Coldata(data),parent.frame())
   columns=Columns(data,columns)
   columns=Columns(data) %in% columns
 
+  if (is.null(reference.columns)) reference.columns=columns
   if (is.matrix(reference.columns)) reference.columns=apply(reference.columns[,Columns(data,columns),drop=FALSE]==1,1,any)
 
-    alpha=GetData(data,mode.slot="alpha",genes=gene,columns = columns)
+    ntr=GetData(data,mode.slot="ntr",genes=gene,columns = columns)
     if (correct.labeling) {
-      if (!is.numeric(time.labeling) && length(unique(alpha[[time.labeling]]))!=1) alpha[[time.labeling]] = median(alpha[[time.labeling]])
-      if (!is.null(time.experiment) && length(unique(alpha[[time.experiment]]))!=1) alpha[[time.experiment]] = median(alpha[[time.experiment]])
+      if (!is.numeric(time.labeling) && length(unique(ntr[[time.labeling]]))!=1) ntr[[time.labeling]] = median(ntr[[time.labeling]])
+      if (!is.null(time.experiment) && length(unique(ntr[[time.experiment]]))!=1) ntr[[time.experiment]] = median(ntr[[time.experiment]])
     } else {
-      if (!is.numeric(time.labeling) && length(unique(alpha[[time.labeling]]))!=1) stop("Labeling duration has to be unique!")
-      if (!is.null(time.experiment) && length(unique(alpha[[time.experiment]]))!=1) stop("Experimental time has to be unique!")
+      if (!is.numeric(time.labeling) && length(unique(ntr[[time.labeling]]))!=1) stop("Labeling duration has to be unique!")
+      if (!is.null(time.experiment) && length(unique(ntr[[time.experiment]]))!=1) stop("Experimental time has to be unique!")
     }
-    beta=GetData(data,mode.slot="beta",genes=gene,columns = columns)
+
     total=GetData(data,mode.slot=slot,genes=gene,columns = columns)
     ss=GetData(data,mode.slot=slot,genes=gene,columns = reference.columns)
-
     if (correct.labeling) {
       if (!is.null(time.experiment) && length(unique(ss[[time.experiment]]))!=1) ss[[time.experiment]] = median(ss[[time.experiment]])
     } else {
@@ -1226,7 +1283,7 @@ FitKineticsGeneSnapshot=function(data,gene,columns=NULL,
       )
     }
 
-    use=total$Value>0 & !is.na(alpha$Value)
+    use=total$Value>0 & !is.na(ntr$Value)
 
     emptyres=function() {
         re=list(
@@ -1243,31 +1300,28 @@ FitKineticsGeneSnapshot=function(data,gene,columns=NULL,
         return(re)
     }
 
-    if (sum(use)<2 || sum(ss$Value>0)==0) return(emptyres())
 
 
-    alpha=alpha[use,]
-    beta=beta[use,]
+    ntr=ntr[use,]
     total=total[use,]
     ss=ss[ss$Value>0,]
+    if ((nrow(ntr)==0)&(nrow(total)==0)) return(emptyres())
 
-    t=if (is.numeric(time.labeling)) time.labeling else unique(alpha[[time.labeling]])
-    t0=if (is.null(time.experiment)) t else unique(alpha[[time.experiment]])-unique(ss[[time.experiment]])
+    t=if (is.numeric(time.labeling)) time.labeling else unique(ntr[[time.labeling]])
+    t0=if (is.null(time.experiment)) t else unique(ntr[[time.experiment]])-unique(ss[[time.experiment]])
     is.steady.state=any(reference.columns & columns)
 
     if (return.points)
-        points=as.data.frame(if (is.steady.state) TransformSnapshot(ntr=alpha$Value/(alpha$Value+beta$Value),total=total$Value,t=t) else TransformSnapshot(ntr=alpha$Value/(alpha$Value+beta$Value),total=total$Value,t=t,t0=t0,f0=mean(ss$Value)))
+        points=as.data.frame(if (is.steady.state) TransformSnapshot(ntr=ntr$Value,total=total$Value,t=t) else TransformSnapshot(ntr=ntr$Value,total=total$Value,t=t,t0=t0,f0=mean(ss$Value)))
 
     if (N<1) {
-        ntr=sum(alpha$Value)/(sum(alpha$Value)+sum(beta$Value))
         if (is.steady.state) {
-            param=TransformSnapshot(ntr=ntr,total=mean(total$Value),t=t)
+            param=TransformSnapshot(ntr=mean(ntr$Value),total=mean(total$Value),t=t)
         } else {
             if (t0<=0) stop("Experimental time is not properly defined (the steady state sample must be prior to each of A and B)!")
             f0=mean(ss$Value)
-            param=TransformSnapshot(ntr=ntr,total=mean(total$Value),t=t,t0=t0,f0=f0)
+            param=TransformSnapshot(ntr=mean(ntr$Value),total=mean(total$Value),t=t,t0=t0,f0=f0)
         }
-
         re=emptyres()
         re$s=param['s']
         re$d=param['d']
@@ -1276,8 +1330,19 @@ FitKineticsGeneSnapshot=function(data,gene,columns=NULL,
         return(re)
     }
 
-    if (hierarchical) {
-        mod=hierarchical.beta.posterior(alpha$Value,beta$Value,compute.marginal.likelihood = FALSE,compute.grid = TRUE,res=50)$sample.mu
+    if (sum(use)<2 || sum(ss$Value>0)==0) {
+      warning("Less than 2 samples. Skipping...")
+      return(emptyres())
+    }
+    alpha=GetData(data,mode.slot="alpha",genes=gene,columns = columns)
+    beta=GetData(data,mode.slot="beta",genes=gene,columns = columns)
+    alpha=alpha[use,]
+    beta=beta[use,]
+
+    if (sample.level==2) {
+      mod=hierarchical.beta.posterior(alpha$Value,beta$Value,compute.marginal.likelihood = FALSE,compute.grid = TRUE,res=50)$sample
+    } else if (sample.level==1) {
+      mod=hierarchical.beta.posterior(alpha$Value,beta$Value,compute.marginal.likelihood = FALSE,compute.grid = TRUE,res=50)$sample.mu
     } else {
         fit=beta.approximate.mixture(alpha$Value,beta$Value)
         mod=function(N) rbeta(N,fit$a,fit$b)
@@ -1441,6 +1506,7 @@ PlotGeneProgressiveTimecourse=function(data,gene,slot=DefaultSlot(data),time=Des
     fit=switch(tolower(type[1]),
                ntr=FitKineticsGeneNtr(data,gene,slot=slot,time=time,...),
                nlls=FitKineticsGeneLeastSquares(data,gene,slot=slot,time=time,...),
+               chase=FitKineticsGeneLeastSquares(data,gene,slot=slot,time=time,...,chase=TRUE),
                lm=FitKineticsGeneLogSpaceLinear(data,gene,slot=slot,time=time,...)
     )
     if (is.null(Coldata(data)$Condition)) fit=setNames(list(fit),gene)
@@ -1467,13 +1533,12 @@ PlotGeneProgressiveTimecourse=function(data,gene,slot=DefaultSlot(data),time=Des
     }
     df$time=df[[time]]
 
-
     if (tolower(type[1])=="ntr") {
         #fac=unlist(lapply(as.character(df$Condition),function(n) fit[[n]]$f0))/df$Value[df$Type=="Total"]
         fac=unlist(lapply(1:nrow(df),function(i) {
-            n=as.character(df$Condition)[i]
+            fit=if(is.null(Condition(data))) fit[[gene]] else fit[[as.character(df$Condition)[i]]]
             tt=df$time[i]
-            f.old.nonequi(tt,fit[[n]]$f0,fit[[n]]$Synthesis,fit[[n]]$Degradation)+f.new(tt,fit[[n]]$Synthesis,fit[[n]]$Degradation)
+            f.old.nonequi(tt,fit$f0,fit$Synthesis,fit$Degradation)+f.new(tt,fit$Synthesis,fit$Degradation)
         }))/df$Value[df$Type=="Total"]
         df$Value=df$Value*fac
         if (show.CI) {
@@ -1482,17 +1547,25 @@ PlotGeneProgressiveTimecourse=function(data,gene,slot=DefaultSlot(data),time=Des
         }
     }
 
+    if (tolower(type[1])=="chase") df=df[!df$no4sU,]
+
     df$Condition=if ("Condition" %in% names(df)) df$Condition else gene
     tt=seq(0,max(df$time),length.out=100)
-    df.median=plyr::ddply(df,c("Condition","Type","duration.4sU","time"),function(s) data.frame(Value=median(s$Value)))
-    fitted=plyr::ldply(fit,function(f) data.frame(time=c(tt,tt),Value=c(f.old.nonequi(tt,f$f0,f$Synthesis,f$Degradation),f.new(tt,f$Synthesis,f$Degradation)),Type=rep(c("Old","New"),each=length(tt))),.id="Condition")
+    df.median=plyr::ddply(df,c("Condition","Type",time,"time"),function(s) data.frame(Value=median(s$Value)))
+
+    if (tolower(type[1])=="chase") {
+      fitted=plyr::ldply(fit,function(f) data.frame(time=c(tt,tt),Value=c(f$Synthesis/f$Degradation-f.old.equi(tt,f$Synthesis,f$Degradation),f.old.equi(tt,f$Synthesis,f$Degradation)),Type=rep(c("Old","New"),each=length(tt))),.id="Condition")
+    } else {
+      fitted=plyr::ldply(fit,function(f) data.frame(time=c(tt,tt),Value=c(f.old.nonequi(tt,f$f0,f$Synthesis,f$Degradation),f.new(tt,f$Synthesis,f$Degradation)),Type=rep(c("Old","New"),each=length(tt))),.id="Condition")
+    }
     breaks=if (exact.tics) sort(unique(df[[time]])) else scales::breaks_extended(5)(df[[time]])
 
     g=ggplot(df,aes(time,Value,color=Type))+cowplot::theme_cowplot()
     if (show.CI) g=g+geom_errorbar(mapping=aes(ymin=lower,ymax=upper),width=0.1)
     g=g+geom_point(size=2)+
         geom_line(data=df.median[df.median$Type=="Total",],size=1)+
-        scale_x_continuous("4sU labeling",labels = scales::number_format(accuracy = max(0.01,my.precision(breaks)),suffix="h"),breaks=breaks)+
+        scale_x_continuous(labels = scales::number_format(accuracy = max(0.01,my.precision(breaks))),breaks=breaks)+
+        xlab("4sU labeling [h]")+
         scale_color_manual("RNA",values=c(Total="gray",New="#e34a33",Old="#2b8cbe"))+
         ylab("Expression")+
         geom_line(data=fitted,aes(ymin=NULL,ymax=NULL),linetype=2,size=1)

@@ -11,7 +11,8 @@ PlotPCA(
   aest = NULL,
   x = 1,
   y = 2,
-  columns = NULL
+  columns = NULL,
+  do.vst = TRUE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ PlotPCA(
 \item{y}{number of principal component to show on the y axis (numeric)}
 
 \item{columns}{which columns (i.e. samples or cells) to perform PCA on (see details)}
+
+\item{do.vst}{perform a variance stabilizing transformation for count data?}
 }
 \value{
 a PCA plot

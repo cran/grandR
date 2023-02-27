@@ -7,8 +7,10 @@
 ComputeExpressionPercentage(
   data,
   name,
-  genes,
+  genes = Genes(data),
   mode.slot = DefaultSlot(data),
+  genes.total = Genes(data),
+  mode.slot.total = mode.slot,
   multiply.by.100 = TRUE
 )
 }
@@ -21,6 +23,10 @@ ComputeExpressionPercentage(
 
 \item{mode.slot}{which mode.slot to take the values for computing the percentage from}
 
+\item{genes.total}{define the set of genes defining the total value}
+
+\item{mode.slot.total}{which mode.slot to take the values for computing the total}
+
 \item{multiply.by.100}{if TRUE, compute percentage values, otherwise fractions between 0 and 1}
 }
 \value{
@@ -30,6 +36,10 @@ a new grandR object having the expression percentage in its Coldata table
 Compute the expression percentage for a particular set of genes.
 }
 \details{
+The percentages are computed for the given genes with the given mode.slot, w.r.t the mode.slot.total from the genes.total. Thus
+to compute the percentage of mitochondrial gene expression in total RNA (unnormalized), only set genes=Genes(data,"^MT-",regex=TRUE).
+To compute the percentage of new RNA among all genes, set mode.slot="new.count" and mode.slot.total="count".
+
 Genes can be referred to by their names, symbols, row numbers in the gene table, or a logical vector referring to the gene table rows.
 
 To refer to data slots, the mode.slot syntax can be used: Each name is either a data slot, or one of (new,old,total)

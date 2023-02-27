@@ -8,7 +8,7 @@
 \usage{
 Analyses(data, description = FALSE)
 
-AddAnalysis(data, name, table, warn.present = TRUE)
+AddAnalysis(data, name, table, by = NULL, warn.present = TRUE)
 
 DropAnalysis(data, pattern = NULL)
 }
@@ -20,6 +20,8 @@ DropAnalysis(data, pattern = NULL)
 \item{name}{The user-defined analysis name}
 
 \item{table}{The analysis table to add}
+
+\item{by}{Specify a column that contains gene names or symbols (see details)}
 
 \item{warn.present}{Warn if an analysis with the same name is already present (and then overwrite)}
 
@@ -36,8 +38,13 @@ The columns in the analysis tables are defined by the analysis method (e.g. "Syn
 A call to an analysis function might produce more than one table (e.g. because kinetic modeling is done for multiple \link{Condition}s). In this case,
 AddAnalysisTable produces more than one analysis table.
 
-\code{AddAnalysis} is usually not called directly by the user, but is
+\code{AddAnalysis} is in most cases  not called directly by the user, but is
 used by analysis methods to add their final result to a grandR object (e.g., \link{FitKinetics},\link{LikelihoodRatioTest},\link{LFC},\link{PairwiseDESeq2}).
+
+If it is called by the user (e.g. to add analysis results from external tools or from the literature, see pulse-chase vignette), then
+the user must make sure that either the rownames of the given table can be recognized as genes (names or symbols), or that there is a column in the
+table giving genes (this must be specified as the "by" parameter). The table does neither have to be sorted the same way the grandR object is, nor does
+it have to be complete. \code{AddAnalysis} will take care or reordering and inserting NA for missing genes (and it will issue a warning in case of missing genes).
 }
 \section{Functions}{
 \itemize{

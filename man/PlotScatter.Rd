@@ -8,6 +8,7 @@ PlotScatter(
   data,
   x = NULL,
   y = NULL,
+  analysis = NULL,
   xcol = NULL,
   ycol = NULL,
   xlab = NULL,
@@ -16,17 +17,22 @@ PlotScatter(
   log.x = log,
   log.y = log,
   remove.outlier = 1.5,
-  xlim = NULL,
-  ylim = NULL,
+  lim = NULL,
+  xlim = lim,
+  ylim = lim,
   size = 0.3,
+  cross = NULL,
+  diag = NULL,
   genes = NULL,
   highlight = NULL,
   label = NULL,
   label.repel = 1,
   facet = NULL,
   color = NULL,
+  colorpalette = NULL,
   density.margin = "n",
   density.n = 100,
+  rasterize = NULL,
   correlation = NULL,
   correlation.x = -Inf,
   correlation.y = Inf,
@@ -41,6 +47,8 @@ PlotScatter(
 \item{x}{an expression to compute the x value or a character corresponding to a sample (or cell) name or a fully qualified analysis result name (see details)}
 
 \item{y}{an expression to compute the y value or a character corresponding to a sample (or cell) name or a fully qualified analysis result name (see details)}
+
+\item{analysis}{the name of an analysis table (can be NULL; see details)}
 
 \item{xcol}{a character corresponding to a sample (or cell) name or a fully qualified analysis result name (see details)}
 
@@ -58,11 +66,17 @@ PlotScatter(
 
 \item{remove.outlier}{configure how outliers are selected (is the coef parameter to \link[grDevices]{boxplot.stats}); can be FALSE, in which case no points are considered outliers (see details)}
 
+\item{lim}{define the both x and y axis limits (vector of length 2 defining the lower and upper bound, respectively)}
+
 \item{xlim}{define the x axis limits (vector of length 2 defining the lower and upper bound, respectively)}
 
 \item{ylim}{define the y axis limits (vector of length 2 defining the lower and upper bound, respectively)}
 
 \item{size}{the point size to use}
+
+\item{cross}{add horizontal and vertical lines through the origin?}
+
+\item{diag}{if TRUE, add main diagonal; if numeric vector, add these diagonals}
 
 \item{genes}{restrict to these genes; can be either numeric indices, gene names, gene symbols or a logical vector}
 
@@ -76,9 +90,13 @@ PlotScatter(
 
 \item{color}{either NULL (use point density colors), or a name of the \link{GeneInfo} table (use scale_color_xxx to define colors), or a color for all points}
 
+\item{colorpalette}{either NULL (use default colors), or a palette name from color brewer or viridis}
+
 \item{density.margin}{for density colors, one of 'n','x' or 'y'; should the density be computed along both axes ('n'), or along 'x' or 'y' axis only}
 
 \item{density.n}{how many bins to use for density calculation (see \link[MASS]{kde2d})}
+
+\item{rasterize}{use ggrastr to rasterize points? (can be NULL, see details)}
 
 \item{correlation}{a function to format correlation statistics to be annotated (see details)}
 
@@ -100,10 +118,12 @@ Convenience method to compare two variables (slot data or analyses results).
 }
 \details{
 Both the x and y parameter are either expressions or names. Names are either sample (or cell, in case of single cell experiments) names or
-fully qualified analysis results (analysis name followed by a dot and the analysis result table column). These names can be used within expressions.
+fully qualified analysis results (analysis name followed by a dot and the analysis result table column). If the analysis parameter is given, the analysis
+name must be omitted from x and y. These names can be used within expressions using non-standard evaluation.
 Defining by names only works with character literals like "kinetics.Synthesis", but if you give an expression (e.g. a variable name that contains a character),
-this won't work, since PlotScatter will try to evaluate this for defining the values, not the name of the column. If you wanna define names, and use
-some expression for this, you need to use the xcol and ycol parameters instead of the x and y parameters!
+the situation is more complicated, since PlotScatter will try to evaluate this for defining the values, not the name of the column. If the expression evaluates
+into a single character string that is equal to a name (see above!), PlotScatter knows what to do. For more complicated situations that cannot be resolved by this,
+you can use the xcol and ycol parameters instead of the x and y parameters!
 
 By default the limits of x and y axis are chosen after removing outliers (using the same algorithm used for \link{boxplot}). Thus, larger numbers filter
 less stringently. remove.outlier can also be set to FALSE (no outlier filtering). If xlim or ylim are set, this overrides outlier filtering. Points outside of the limits
@@ -113,6 +133,9 @@ By default, all genes are shown. This can be restricted using the \code{genes} p
 using \code{highlight}. This parameter either describes a subset of the genes (either numeric indices, gene names, gene symbols or a logical vector), in which case these genes
 are plotted in red and with larger points size, or it can be a list of such vectors. The names of this list must be valid colors. Genes can also be labeled (make sure that this
 is really only a small subset of the genes).
+
+When rendering to vector based devices (such as svg or pds), a genome-wide scatterplot often is painfully big (and rendering therefore slow). The \code{rasterize}
+parameter can be used to automatically rasterize the points only (via the ggrastr package). If this parameter is NULL, ggrastr is used if more than 1000 points are plotted!
 
 Often scatter plots show that x and y coordinates are correlated. Correlations can be annotated using the \link{FormatCorrelation} function. Most often you will use
 \code{PlotScatter(data,x,y,correlation=FormatCorrelation())}. To use a different correlation measure, other formats for correlation coefficient and P values or omit one of these

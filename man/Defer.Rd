@@ -31,7 +31,8 @@ difference is that in the second case, the result is cached: \code{Heavy.functio
 if \code{f} is called a second time, the previous result is returned. This makes sense if the parameter \code{d} is constant (like a grandR object)
 and if \code{Heavy.function} is deterministic.
 
-If additional parameters are provided to \code{f}, caching is disabled. Be careful if \code{Heavy.function} is not deterministic (see examples).
+If additional parameters are provided to \code{f}, caching is disabled. If any of these additional parameters has the same name as the parameters
+given to \code{Defer()}, the parameters given to \code{Defer()} are overwritten. Be careful if \code{Heavy.function} is not deterministic (see examples).
 
 Use case scenario: You want to produce a heatmap from a grandR object to be used as \code{plot.static} in the shiny web interface.
 \code{\link{PlotHeatmap}} takes some time, and the resulting object is pretty large in memory. Saving the heatmap object to disk is very

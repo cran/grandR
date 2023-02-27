@@ -13,7 +13,7 @@ Transform.Z(label = "z score", center = TRUE, scale = TRUE)
 
 Transform.VST(label = "VST")
 
-Transform.logFC(label = "log2 FC", LFC.fun = lfc::PsiLFC, columns = NULL, ...)
+Transform.logFC(label = "log2 FC", LFC.fun = NULL, columns = NULL, ...)
 }
 \arguments{
 \item{label}{label that is used for the heatmap legend}

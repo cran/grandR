@@ -10,7 +10,8 @@ PairwiseDESeq2(
   contrasts,
   separate = FALSE,
   mode = "total",
-  normalization = mode,
+  slot = "count",
+  normalization = NULL,
   logFC = FALSE,
   verbose = FALSE
 )
@@ -25,6 +26,8 @@ PairwiseDESeq2(
 \item{separate}{model overdispersion separately for all pairwise comparison (TRUE), or fit a single model per gene, and extract contrasts (FALSE)}
 
 \item{mode}{compute LFCs for "total", "new", or "old" RNA}
+
+\item{slot}{which slot to use (should be a count slot, not normalized values)}
 
 \item{normalization}{normalize on "total", "new", or "old" (see details)}
 
@@ -49,6 +52,9 @@ Apply DESeq2 for comparisons defined in a contrast matrix, requires the DESeq2 p
 DESeq2 by default performs size factor normalization. When computing differential expression of new RNA,
 it might be sensible to normalize w.r.t. to total RNA, i.e. use the size factors computed from total RNA instead of computed from new RNA.
 This can be accomplished by setting mode to "new", and normalization to "total"!
+
+Normalization can also be a mode.slot! Importantly, do not specify a slot containing normalized values, but specify a slot of unnormalized values
+(which are used to compute the size factors for normalization!)
 }
 \examples{
 \donttest{

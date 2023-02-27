@@ -43,7 +43,7 @@ GetContrasts(x, ...)
 \item{name.format}{Format string for generating the column from the contrast vector (see details)}
 }
 \value{
-A contrast matrix to be used in \code{\link{ApplyContrasts}}, \code{\link{LFC}}, \code{\link{PairwiseDESeq2}}
+A data frame representig a contrast matrix to be used in \code{\link{ApplyContrasts}}, \code{\link{LFC}}, \code{\link{PairwiseDESeq2}}
 }
 \description{
 Each column of a contrast matrix represents a pairwise comparison of all samples or cells of
@@ -85,7 +85,7 @@ GetContrasts(sars,contrast=c("Condition","SARS","Mock"))
 # This direction of the comparison is more reasonable
 GetContrasts(sars,contrast=c("Condition","SARS","Mock"),group="Time")
 # Compare SARS vs Mock per time point
-GetContrasts(sars,contrast=c("Time","no4sU"), group="Condition",no4sU=TRUE,
+GetContrasts(sars,contrast=c("Time.original","no4sU"), group="Condition",no4sU=TRUE,
                                                 name.format="$A vs $B ($GRP)")
 # Compare each sample against the respective no4sU sample
 

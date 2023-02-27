@@ -11,7 +11,7 @@ CalibrateEffectiveLabelingTimeKineticFit(
   time.name = "calibrated_time",
   time.conf.name = "calibrated_time_conf",
   CI.size = 0.95,
-  steady.state = NULL,
+  compute.confidence = FALSE,
   n.estimate = 1000,
   n.iter = 10000,
   verbose = FALSE,
@@ -31,7 +31,7 @@ CalibrateEffectiveLabelingTimeKineticFit(
 
 \item{CI.size}{The level for confidence intervals}
 
-\item{steady.state}{either a named list of logical values representing conditions in steady state or not, or a single logical value for all conditions}
+\item{compute.confidence}{should CIs be computed or not?}
 
 \item{n.estimate}{the times are calibrated with the top n expressed genes}
 
