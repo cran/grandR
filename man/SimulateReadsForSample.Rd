@@ -17,6 +17,7 @@ SimulateReadsForSample(
   read.length = 75,
   p.old = 1e-04,
   p.new = 0.04,
+  p.new.fit = p.new,
   seed = NULL
 )
 }
@@ -42,6 +43,8 @@ SimulateReadsForSample(
 \item{p.old}{the probability for a conversion in reads originating from old RNA}
 
 \item{p.new}{the probability for a conversion in reads originating from new RNA}
+
+\item{p.new.fit}{the probability for a conversion in reads originating from new RNA that is used for fitting (to simulate bias in the estimation of p.new)}
 
 \item{seed}{seed value for the random number generator (set to make it deterministic!)}
 }

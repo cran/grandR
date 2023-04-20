@@ -8,7 +8,7 @@ SimulateKinetics(
   s = 100 * d,
   d = log(2)/hl,
   hl = 2,
-  f0 = s/d,
+  f0 = NULL,
   min.time = -1,
   max.time = 10,
   N = 1000,
@@ -17,9 +17,9 @@ SimulateKinetics(
 )
 }
 \arguments{
-\item{s}{the synthesis rate}
+\item{s}{the synthesis rate (see details)}
 
-\item{d}{the degradation rate}
+\item{d}{the degradation rate (see details)}
 
 \item{hl}{the RNA half-life}
 
@@ -44,6 +44,10 @@ The standard mass action kinetics model of gene expression arises from the diffe
 The RNA half-life is directly related to d via \eqn{HL=log(2)/d}.
 This model dictates the time evolution of old and new RNA abundance after metabolic labeling starting at time t=0.
 This function simulates data according to this model.
+}
+\details{
+Both rates can be either (i) a single number (constant rate), (ii) a data frame with names "offset",
+"factor" and "exponent" (for linear functions, see \link{ComputeNonConstantParam}) or (iii) a unary function time->rate. Functions
 }
 \examples{
 head(SimulateKinetics(hl=2))   # simulate steady state kinetics for an RNA with half-life 2h

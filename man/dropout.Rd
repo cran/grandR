@@ -31,7 +31,8 @@ Plot4sUDropoutRank(
   return.corr = FALSE,
   boxplot.bins = 10,
   title = w4sU,
-  size = 1.5
+  size = 1.5,
+  invert.ranks = FALSE
 )
 
 Plot4sUDropout(
@@ -79,6 +80,8 @@ Plot4sUDropout(
 \item{title}{the main title for the plot}
 
 \item{size}{the point size}
+
+\item{invert.ranks}{if TRUE, left to right on the plot is largest NTR to smallest NTR}
 
 \item{hl.quantile}{the half-life quantile to cut the plot}
 

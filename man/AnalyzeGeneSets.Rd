@@ -8,6 +8,7 @@ AnalyzeGeneSets(
   data,
   analysis = Analyses(data)[1],
   criteria = LFC,
+  genes = NULL,
   species = NULL,
   category = NULL,
   subcategory = NULL,
@@ -23,6 +24,8 @@ AnalyzeGeneSets(
 \item{analysis}{the analysis to use, can be more than one and can be regexes (see details)}
 
 \item{criteria}{an expression to define criteria for GSEA/ORA (see details)}
+
+\item{genes}{specify genes directly (use analysis and criteria if NULL; see details)}
 
 \item{species}{the species the genes belong to (eg "Homo sapiens"); can be NULL, then the species is inferred from gene ids (see details)}
 

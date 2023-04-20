@@ -1,5 +1,5 @@
 Package: grandR
-Version: 0.2.1
+Version: 0.2.2
 Title: Comprehensive Analysis of Nucleotide Conversion Sequencing Data
 Authors@R: c(
     person("Florian", "Erhard", email = "Florian.Erhard@uni-wuerzburg.de", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3574-6983")),
@@ -28,10 +28,10 @@ Suggests: knitr, rmarkdown, circlize, Seurat, ComplexHeatmap, ggrepel,
         DESeq2, S4Vectors, data.table, clusterProfiler, biomaRt,
         msigdbr, fgsea, rclipboard, cubature, DT, RColorBrewer, gsl,
         htmltools, matrixStats, monocle, VGAM, quantreg, graphics,
-        shiny, ggrastr, viridisLite
+        shiny, ggrastr, viridisLite, deSolve
 RoxygenNote: 7.2.1
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2023-02-27 09:09:37 UTC; erhard
+Packaged: 2023-04-20 20:55:34 UTC; erhard
 Repository: CRAN
-Date/Publication: 2023-02-27 09:32:39 UTC
+Date/Publication: 2023-04-20 21:22:30 UTC
