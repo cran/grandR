@@ -10,6 +10,7 @@ ApplyContrasts(
   name.prefix,
   contrasts,
   mode.slot = NULL,
+  genes = NULL,
   verbose = FALSE,
   FUN,
   ...
@@ -25,6 +26,8 @@ ApplyContrasts(
 \item{contrasts}{contrast matrix that defines all pairwise comparisons, generated using \link{GetContrasts}}
 
 \item{mode.slot}{which slot to take expression values from}
+
+\item{genes}{restrict analysis to these genes; NULL means all genes}
 
 \item{verbose}{print status messages?}
 

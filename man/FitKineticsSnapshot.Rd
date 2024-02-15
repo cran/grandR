@@ -58,14 +58,12 @@ FitKineticsSnapshot(
 }
 \value{
 a new grandR object including new analysis tables (one per condition). The columns of the new analysis table are
-\itemize{
  \item{"s"}{the posterior mean synthesis rate}
  \item{"HL"}{the posterior mean RNA half-life}
  \item{"s.cred.lower"}{the lower CI boundary of the synthesis rate}
  \item{"s.cred.upper"}{the upper CI boundary of the synthesis rate}
  \item{"HL.cred.lower"}{the lower CI boundary of the half-life}
  \item{"HL.cred.upper"}{the upper CI boundary of the half-life}
-}
 }
 \description{
 Compute the posterior distributions of RNA synthesis and degradation from snapshot experiments for each condition

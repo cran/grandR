@@ -12,6 +12,7 @@ Pairwise(
   slot = "count",
   mode = "total",
   normalization = mode,
+  genes = NULL,
   verbose = FALSE
 )
 }
@@ -30,17 +31,17 @@ Pairwise(
 
 \item{normalization}{normalize on "total", "new", or "old" (see details)}
 
+\item{genes}{restrict analysis to these genes; NULL means all genes}
+
 \item{verbose}{print status messages?}
 }
 \value{
 a new grandR object including a new analysis table. The columns of the new analysis table are
-\itemize{
  \item{"M"}{the base mean}
  \item{"S"}{the log2FoldChange divided by lfcSE}
  \item{"P"}{the Wald test P value}
  \item{"Q"}{same as P but Benjamini-Hochberg multiple testing corrected}
  \item{"LFC"}{the log2 fold change}
-}
 }
 \description{
 This function is a shortcut for first calling \link{PairwiseDESeq2} and then \link{LFC}.
@@ -51,7 +52,8 @@ When computing LFCs of new RNA, it might be sensible to normalize w.r.t. to tota
 This can be accomplished by setting mode to "new", and normalization to "total"!
 
 Normalization can also be a mode.slot! Importantly, do not specify a slot containing normalized values, but specify a slot of unnormalized values
-(which are used to compute the size factors for normalization!)
+(which are used to compute the size factors for normalization!) Can also be a numeric vector of size factors with the same length as the data as columns.
+Then each value is divided by the corresponding size factor entry.
 }
 \seealso{
 \link{PairwiseDESeq2},\link{GetContrasts}

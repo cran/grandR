@@ -12,6 +12,8 @@ LFC(
   LFC.fun = lfc::PsiLFC,
   mode = "total",
   normalization = NULL,
+  compute.M = TRUE,
+  genes = NULL,
   verbose = FALSE,
   ...
 )
@@ -31,15 +33,17 @@ LFC(
 
 \item{normalization}{normalize on "total", "new", or "old" (see details)}
 
+\item{compute.M}{also compute the mean expression (in log10 space)}
+
+\item{genes}{restrict analysis to these genes; NULL means all genes}
+
 \item{verbose}{print status messages?}
 
 \item{...}{further arguments forwarded to LFC.fun}
 }
 \value{
 a new grandR object including a new analysis table. The columns of the new analysis table are
-\itemize{
  \item{"LFC"}{the log2 fold change}
-}
 }
 \description{
 Estimate the log fold changes based on a contrast matrix, requires the LFC package.
@@ -50,7 +54,8 @@ When computing LFCs of new RNA, it might be sensible to normalize w.r.t. to tota
 This can be accomplished by setting mode to "new", and normalization to "total"!
 
 Normalization can also be a mode.slot! Importantly, do not specify a slot containing normalized values, but specify a slot of unnormalized values
-(which are used to compute the size factors for normalization!)
+(which are used to compute the size factors for normalization!) Can also be a numeric vector of size factors with the same length as the data as columns.
+Then each value is divided by the corresponding size factor entry.
 }
 \examples{
 sars <- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),

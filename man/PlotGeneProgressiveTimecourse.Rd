@@ -25,7 +25,7 @@ PlotGeneProgressiveTimecourse(
 
 \item{time}{the labeling duration column in the column annotation table}
 
-\item{type}{how to fit the model (see link{FitKinetics})}
+\item{type}{how to fit the model (see \link{FitKinetics})}
 
 \item{exact.tics}{use axis labels directly corresponding to the available labeling durations?}
 

@@ -46,8 +46,11 @@ Plot4sUDropout(
   hl.quantile = 0.8,
   hl = NULL,
   correction = 1,
+  label.corr = FALSE,
+  return.corr = FALSE,
   title = w4sU,
-  size = 1.5
+  size = 1.5,
+  color.by.ntr = FALSE
 )
 }
 \arguments{
@@ -86,6 +89,8 @@ Plot4sUDropout(
 \item{hl.quantile}{the half-life quantile to cut the plot}
 
 \item{hl}{if NULL, compute half-lives from the ntr column; otherwise, must be a vector containing half-lives}
+
+\item{color.by.ntr}{if true, compute the density colors along the ntr axis instead of globally}
 }
 \value{
 either a ggplot object, a list of ggplot objects, or a list of deferred functions for plotting

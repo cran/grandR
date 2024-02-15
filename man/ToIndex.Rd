@@ -4,7 +4,7 @@
 \alias{ToIndex}
 \title{Obtain the indices of the given genes}
 \usage{
-ToIndex(data, gene, regex = FALSE, remove.missing = TRUE)
+ToIndex(data, gene, regex = FALSE, remove.missing = TRUE, warn = TRUE)
 }
 \arguments{
 \item{data}{The grandR object}
@@ -14,6 +14,8 @@ ToIndex(data, gene, regex = FALSE, remove.missing = TRUE)
 \item{regex}{Treat gene as a regex and return all that match}
 
 \item{remove.missing}{if TRUE, do not return missing genes (return NA otherwise)}
+
+\item{warn}{if TRUE emit a warning if not all genes are found}
 }
 \value{
 Numeric indices corresponding to the given genes

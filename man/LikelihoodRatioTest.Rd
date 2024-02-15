@@ -40,13 +40,11 @@ LikelihoodRatioTest(
 }
 \value{
 a new grandR object including a new analysis table. The columns of the new analysis table are
-\itemize{
  \item{"M"}{the base mean}
  \item{"S"}{the difference in deviance between the reduced model and the full model}
  \item{"P"}{the likelihood ratio test P value}
  \item{"Q"}{same as P but Benjamini-Hochberg multiple testing corrected}
  \item{"LFC"}{the log2 fold change for the target model (only with the logFC parameter set to TRUE)}
-}
 }
 \description{
 The test is computed on any of total/old/new counts using DESeq2 based on two nested models

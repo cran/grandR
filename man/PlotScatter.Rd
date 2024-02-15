@@ -16,13 +16,18 @@ PlotScatter(
   log = FALSE,
   log.x = log,
   log.y = log,
+  axis = TRUE,
+  axis.x = axis,
+  axis.y = axis,
   remove.outlier = 1.5,
+  show.outlier = TRUE,
   lim = NULL,
   xlim = lim,
   ylim = lim,
   size = 0.3,
   cross = NULL,
   diag = NULL,
+  filter = NULL,
   genes = NULL,
   highlight = NULL,
   label = NULL,
@@ -30,6 +35,7 @@ PlotScatter(
   facet = NULL,
   color = NULL,
   colorpalette = NULL,
+  color.label = NULL,
   density.margin = "n",
   density.n = 100,
   rasterize = NULL,
@@ -64,7 +70,15 @@ PlotScatter(
 
 \item{log.y}{if TRUE, use log scale for the y axis}
 
+\item{axis}{if FALSE, don't show x and y axes}
+
+\item{axis.x}{if FALSE, don't show the x axis}
+
+\item{axis.y}{if FALSE, don't show the y axis}
+
 \item{remove.outlier}{configure how outliers are selected (is the coef parameter to \link[grDevices]{boxplot.stats}); can be FALSE, in which case no points are considered outliers (see details)}
+
+\item{show.outlier}{if TRUE, show outlier as gray points at the border of the plotting plane}
 
 \item{lim}{define the both x and y axis limits (vector of length 2 defining the lower and upper bound, respectively)}
 
@@ -77,6 +91,8 @@ PlotScatter(
 \item{cross}{add horizontal and vertical lines through the origin?}
 
 \item{diag}{if TRUE, add main diagonal; if numeric vector, add these diagonals}
+
+\item{filter}{restrict to these rows; is evaluated for the data frame, and should result in a logical vector}
 
 \item{genes}{restrict to these genes; can be either numeric indices, gene names, gene symbols or a logical vector}
 
@@ -91,6 +107,8 @@ PlotScatter(
 \item{color}{either NULL (use point density colors), or a name of the \link{GeneInfo} table (use scale_color_xxx to define colors), or a color for all points}
 
 \item{colorpalette}{either NULL (use default colors), or a palette name from color brewer or viridis}
+
+\item{color.label}{the label for the color legend}
 
 \item{density.margin}{for density colors, one of 'n','x' or 'y'; should the density be computed along both axes ('n'), or along 'x' or 'y' axis only}
 

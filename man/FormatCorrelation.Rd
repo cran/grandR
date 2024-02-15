@@ -8,7 +8,9 @@ FormatCorrelation(
   method = "pearson",
   n.format = NULL,
   coeff.format = "\%.2f",
-  p.format = "\%.2g"
+  p.format = "\%.2g",
+  slope.format = NULL,
+  rmsd.format = NULL
 )
 }
 \arguments{
@@ -19,6 +21,10 @@ FormatCorrelation(
 \item{coeff.format}{format string for the correlation coefficient (see \link{sprintf}); can be NULL (don't output the correlation coefficient)}
 
 \item{p.format}{format string for the P value (see \link{sprintf}); can be NULL (don't output the P value)}
+
+\item{slope.format}{format string for the slope (see \link{sprintf}); can be NULL (don't output the slope)}
+
+\item{rmsd.format}{format string for the root mean square deviation (see \link{sprintf}); can be NULL (don't output the rmsd)}
 }
 \value{
 a function
@@ -28,6 +34,8 @@ Returns a function that takes x and y and returns a formatted output to describe
 }
 \details{
 Use this for the \code{correlation} parameter of \link{PlotScatter}
+
+The slope is computed via a principal component analysis and *not* by linear regression
 }
 \examples{
 

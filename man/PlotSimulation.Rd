@@ -4,7 +4,14 @@
 \alias{PlotSimulation}
 \title{Plot simulated data}
 \usage{
-PlotSimulation(sim.df, ntr = TRUE, old = TRUE, new = TRUE, total = TRUE)
+PlotSimulation(
+  sim.df,
+  ntr = TRUE,
+  old = TRUE,
+  new = TRUE,
+  total = TRUE,
+  line.size = 1
+)
 }
 \arguments{
 \item{sim.df}{the input data frame}
@@ -16,6 +23,8 @@ PlotSimulation(sim.df, ntr = TRUE, old = TRUE, new = TRUE, total = TRUE)
 \item{new}{show new RNA?}
 
 \item{total}{show total RNA?}
+
+\item{line.size}{which line size to use}
 }
 \value{
 a ggplot object

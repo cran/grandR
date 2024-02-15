@@ -8,7 +8,14 @@
 \usage{
 Analyses(data, description = FALSE)
 
-AddAnalysis(data, name, table, by = NULL, warn.present = TRUE)
+AddAnalysis(
+  data,
+  name,
+  table,
+  by = NULL,
+  warn.present = TRUE,
+  warn.genes = TRUE
+)
 
 DropAnalysis(data, pattern = NULL)
 }
@@ -24,6 +31,8 @@ DropAnalysis(data, pattern = NULL)
 \item{by}{Specify a column that contains gene names or symbols (see details)}
 
 \item{warn.present}{Warn if an analysis with the same name is already present (and then overwrite)}
+
+\item{warn.genes}{Warn if genes are missing (and then add NA)}
 
 \item{pattern}{A regular expression that is matched to analysis names}
 }

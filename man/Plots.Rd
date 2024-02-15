@@ -13,7 +13,7 @@ Plots(data)
 
 AddGenePlot(data, name, FUN)
 
-AddGlobalPlot(data, name, FUN)
+AddGlobalPlot(data, name, FUN, floating = FALSE)
 
 PlotGene(data, name, gene)
 
@@ -27,6 +27,8 @@ DropPlots(data, pattern = NULL)
 \item{name}{The user-defined plot name}
 
 \item{FUN}{The plotting function to add}
+
+\item{floating}{whether or not the plot should be shown as a floating window}
 
 \item{gene}{The gene to plot}
 
@@ -42,6 +44,8 @@ Get plot names and add or remove plots
 FUN has to be a function with a single parameter for global plots (i.e., the grandR object) or two parameters for gene plots
 (i.e., the grandR object and the gene name). Usually, it is either the name of a plotting function, such as \link{PlotGeneOldVsNew}, or, if it is
 necessary to parametrize it, a call to \link{Defer} (which takes care of caching plots without storing an additional copy of the grandR object).
+
+For floating window plots, if names are given in the format <title>.<name>, a plot is created for each <title> with several subplots.
 }
 \section{Functions}{
 \itemize{
@@ -49,7 +53,7 @@ necessary to parametrize it, a call to \link{Defer} (which takes care of caching
 
 \item \code{AddGenePlot()}: Add a gene plot to the grandR object
 
-\item \code{AddGlobalPlot()}: Add a global plot to the the grandR object
+\item \code{AddGlobalPlot()}: Add a global plot to the grandR object
 
 \item \code{PlotGene()}: Create a gene plot
 

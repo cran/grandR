@@ -129,7 +129,7 @@ conveniently build a logical vector (e.g., columns=Condition=="x").
   \item{subset}{Create a new grandR object with a subset of the columns (use \code{\link{FilterGenes}} to subset on genes)}
   \item{split}{Split the grandR object into a list of multiple grandR objects (according to the levels of an annotation table column)}
   \item{RenameColumns}{Rename the column names according to a lookup table (map) or a function (invoked on the current names)}
-  \item{SwapColumns}{Swap the order of two columns (samples or cells)}
+  \item{SwapColumns}{Swap two columns (samples or cells); this is what you do if samples were mislabeled!}
   \item{Metadata}{Obtain global metadata}
   \item{merge}{Merge several grandR objects into one}
 }

@@ -11,6 +11,8 @@ ServeGrandR(
   height = 400,
   plot.gene = NULL,
   plot.global = NULL,
+  plot.window = NULL,
+  highlight = NULL,
   df.identifier = "Symbol",
   title = Title(data),
   show.sessionInfo = FALSE,
@@ -20,7 +22,7 @@ ServeGrandR(
 \arguments{
 \item{data}{the grandR object (or a file name to an rds file containing a grandR object)}
 
-\item{table}{the table to display (can be NULL; see details)}
+\item{table}{the table to display (can be NULL or a named list; see details)}
 
 \item{sizes}{the widths for the gene plots to show (12 is full screen with); must be a vector as long as there are gene plots}
 
@@ -29,6 +31,10 @@ ServeGrandR(
 \item{plot.gene}{a list of gene plots; can be NULL, then the stored gene plots are used (see \link{Plots})}
 
 \item{plot.global}{a list of global plots; can be NULL, then the stored global plots are used (see \link{Plots})}
+
+\item{plot.window}{a list of static plots to show in a floating window; see details}
+
+\item{highlight}{a vector of gene names that are highlighted in the beginning}
 
 \item{df.identifier}{the main identifier (column name) from the table; this is used when calling the gene plot functions;}
 
@@ -46,11 +52,28 @@ Fire up a shiny web server for exploratory analysis of grandR data.
 }
 \details{
 If the table parameter is NULL, either an analysis table named "ServeGrandR" is
-used (if it exists), otherwise the columns "Q", "LFC", "Synthesis" and "Half-life" of all analysis tables are used.
+used (if it exists), otherwise the columns "Q", "LFC", "Synthesis" and "Half-life" of all analysis tables are used. If it is a list, a menu is created in the navbar
+
+plot.window must be a list of plotting functions that receive the grandR object and return a plot. It can also be a list of list, in which case more than one plotting windows are generated.
+Each plot will be rendered with a size of 350x350.
 
 The gene plots must be functions that accept two parameters: the grandR object and a gene identifier. You can either use
 functions directly (e.g. \code{plot.gene=list(PlotGeneOldVsNew)}), or use \link{Defer} in cases you need to specify additional parameters,
 e.g. \code{plot.gene=list(Defer(PlotGeneOldVsNew,log=FALSE))}. The global plots are functions accepting a single parameter (the grandR object). Here
 the use of \link{Defer} is encouraged due to its caching mechanism.
+}
+\examples{
+\dontrun{
+sars <- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),
+                  design=c("Condition",Design$dur.4sU,Design$Replicate))
+sars <- Normalize(sars)
+sars <- Pairwise(sars,contrasts = GetContrasts(sars,contrast = c("Condition","SARS","Mock")))
+sars <- AddGenePlot(sars,"timecourse",
+                    Defer(PlotGeneProgressiveTimecourse,steady.state=c(Mock=TRUE,SARS=FALSE)))
+sars <- AddGlobalPlot(sars,"Vulcano",VulcanoPlot)
+ServeGrandR(sars)
+
+}
+
 }
 \concept{shiny}

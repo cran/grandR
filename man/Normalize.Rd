@@ -31,7 +31,8 @@ NormalizeRPM(
   genes = Genes(data),
   name = "rpm",
   slot = "count",
-  set.to.default = TRUE
+  set.to.default = TRUE,
+  factor = 1e+06
 )
 
 NormalizeTPM(
@@ -59,6 +60,8 @@ NormalizeTPM(
 \item{return.sf}{return the size factors and not a grandR object}
 
 \item{tlen}{the transcript lengths (for FPKM and TPM)}
+
+\item{factor}{the rpm factor (default: 1 (m)illion)}
 }
 \value{
 a new grandR object with a new data slot

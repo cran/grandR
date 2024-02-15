@@ -61,7 +61,6 @@ EstimateRegulation(
 }
 \value{
 a new grandR object including a new analysis table. The columns of the new analysis table are
-\itemize{
  \item{"s.A"}{the posterior mean synthesis rate for sample A from the comparison}
  \item{"s.B"}{the posterior mean synthesis rate for sample B from the comparison}
  \item{"HL.A"}{the posterior mean RNA half-life for sample A from the comparison}
@@ -74,7 +73,6 @@ a new grandR object including a new analysis table. The columns of the new analy
  \item{"HL.cred.lower"}{the lower CI boundary of the half-life log2 fold change}
  \item{"HL.cred.upper"}{the upper CI boundary of the half-life log2 fold change}
  \item{"HL.ROPE"}{the signed ROPE probability (negative means downregulation) for the half-life fold change}
-}
 }
 \description{
 Compute the posterior log2 fold change distributions of RNA synthesis and degradation

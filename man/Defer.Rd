@@ -4,7 +4,7 @@
 \alias{Defer}
 \title{Defer calling a function}
 \usage{
-Defer(FUN, ..., add = NULL, cache = TRUE)
+Defer(FUN, ..., add = NULL, cache = TRUE, width.height = NULL)
 }
 \arguments{
 \item{FUN}{the function to be deferred}
@@ -14,6 +14,8 @@ Defer(FUN, ..., add = NULL, cache = TRUE)
 \item{add}{list containing additional elements to be added \code{+} to the result of the deferred function}
 
 \item{cache}{use caching mechanism}
+
+\item{width.height}{a vector containing the desired width and height (not checked!)}
 }
 \value{
 a function that can be called
