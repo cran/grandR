@@ -34,6 +34,7 @@ NULL
 #' @param reorder reorder all factors in coldata (if columns for subset define a different order)
 #' @param f The name of the annotation table according to which the object is split or the new annotation table column name denoting the origin after merging
 #' @param list a list of grandR objects
+#' @param by.columns merge by columns (i.e. add additional columsn to the first) or not (i.e. add additional genes to the first)
 #' @param column.name a new name for the Coldata table to annotate the merged objects
 #' @param map named list or vector representing a lookup table (names are current column names)
 #' @param fun a function that maps a vector of names to a new vector of names
@@ -258,63 +259,153 @@ SwapColumns=function(data,s1,s2) {
 #' @rdname grandR
 #' @export merge.grandR
 #' @export
-merge.grandR=function(...,list=NULL,column.name=Design$Origin) {
+merge.grandR=function(...,list=NULL,by.columns=TRUE,column.name=Design$Origin) {
   list=c(list(...),list)
   if (length(list)==1) return(list[[1]])
 
   re=list[[1]]
-  if (!is.null(names(list))) re$coldata[[column.name]]=names(list)[1]
-  for (i in 2:length(list)) {
-    add=list[[i]]
-    if (!is.null(names(list))) add$coldata[[column.name]]=names(list)[i]
-    if (any(colnames(add) %in% colnames(re))) stop("Sample names must be unique!")
-    if (any(rownames(add)!=rownames(re))) stop("Data sets must have the same genes!")
-    #if (any(colnames(add$coldata)!=colnames(re$coldata))) stop("Data sets have distinct coldata columns!")
-    if (!all(names(add$data) %in% names(re$data))) stop("Data sets must have the same data tables!")
 
-    # merge coldata paying attention to columns and factor levels
-    cd=NULL
-    for (common in intersect(names(re$coldata),names(add$coldata))) {
-      if(is.factor(re$coldata[[common]])) {
-        r = c(as.character(re$coldata[[common]]),as.character(add$coldata[[common]]))
-        oll=levels(add$coldata[[common]])
-        if (is.null(oll)) oll = unique(add$coldata[[common]])
-        r=factor(r,levels=union(levels(re$coldata[[common]]),oll))
-      } else {
-        r = c(re$coldata[[common]],add$coldata[[common]])
+  if (by.columns) {
+    if (!is.null(names(list))) re$coldata[[column.name]]=names(list)[1]
+    for (i in 2:length(list)) {
+      add=list[[i]]
+      if (!is.null(names(list))) add$coldata[[column.name]]=names(list)[i]
+
+      re= merge_columns(re,add,names(list)[i])
+    }
+
+    re$gene.info$Symbol = check.and.make.unique(re$gene.info$Symbol,label="symbols")
+
+  } else {
+    if (!is.null(names(list))) re$gene.info[[column.name]]=names(list)[1]
+    for (i in 2:length(list)) {
+      add=list[[i]]
+      if (!is.null(names(list))) add$gene.info[[column.name]]=names(list)[i]
+
+      re = merge_genes(re,add)
+    }
+
+  }
+
+  re
+}
+
+
+
+merge_genes=function(re,add) {
+  if (!all(colnames(add)==colnames(re)) || length(intersect(Genes(add),Genes(re)))!=0) stop("Data sets must have the same columns to merge by genes!")
+  if (length(intersect(Genes(add),Genes(re)))!=0 || length(intersect(Genes(add,use.symbols=FALSE),Genes(re,use.symbols=FALSE)))!=0) stop("Genes must be unique!")
+  if (!setequal(names(add$data), names(re$data))) stop("Data sets must have the same data tables!")
+  if (!is.null(Analyses(re)) || !is.null(Analyses(add))) stop("Data sets must not have analyses!")
+
+  re$gene.info=smartrbind(re$gene.info,add$gene.info)
+
+  for (l1 in names(re$data)) {
+    re$data[[l1]]=rbind(re$data[[l1]],add$data[[l1]])
+  }
+
+  re
+}
+
+merge_columns=function(re,add,addname) {
+  if (any(colnames(add) %in% colnames(re))) stop("Sample names must be unique!")
+  if (!setequal(rownames(add),rownames(re))) warning("Data sets do not have the same genes, watch out for zeros!")
+  #if (any(colnames(add$coldata)!=colnames(re$coldata))) stop("Data sets have distinct coldata columns!")
+  if (!all(names(add$data) %in% names(re$data))) stop("Data sets must have the same data tables!")
+
+  # merge coldata paying attention to columns and factor levels
+#  cd=NULL
+#  for (common in intersect(names(re$coldata),names(add$coldata))) {
+#    if(is.factor(re$coldata[[common]])) {
+#      r = c(as.character(re$coldata[[common]]),as.character(add$coldata[[common]]))
+#      oll=levels(add$coldata[[common]])
+#      if (is.null(oll)) oll = unique(add$coldata[[common]])
+#      r=factor(r,levels=union(levels(re$coldata[[common]]),oll))
+#    } else {
+#      r = c(re$coldata[[common]],add$coldata[[common]])
+#    }
+#    df=setNames(data.frame(r),common)
+#    cd=if (is.null(cd)) df else cbind(cd,df)
+#  }
+#  for (re.only in setdiff(names(re$coldata),names(add$coldata))) {
+#    r=c(re$coldata[[re.only]],rep(NA,nrow(add$coldata)))
+#    df=setNames(data.frame(r),re.only)
+#    cd=if (is.null(cd)) df else cbind(cd,df)
+#  }
+#  for (add.only in setdiff(names(add$coldata),names(re$coldata))) {
+#    r=c(rep(NA,nrow(re$coldata)),add$coldata[[add.only]])
+#    df=setNames(data.frame(r),add.only)
+#    cd=if (is.null(cd)) df else cbind(cd,df)
+#  }
+#  rownames(cd)=c(rownames(re$coldata),rownames(add$coldata))
+#  re$coldata=cd
+
+  re$coldata=smartrbind(re$coldata,add$coldata)
+
+  if (!setequal(names(re$data),names(add$data))) warning("Slots are not the same, only use common slots!")
+
+  # Genes have to be made equal!
+  if (length(rownames(add))!=length(rownames(re)) || !all(rownames(add)==rownames(re))) {
+    genes <- union(Genes(re,use.symbols=FALSE),Genes(add,use.symbols=FALSE))
+
+    new.gene.info = data.frame(Gene=genes)
+    rownames(new.gene.info)=genes
+    rownames(re$gene.info)=Genes(re,use.symbols=FALSE)
+    rownames(add$gene.info)=Genes(add,use.symbols=FALSE)
+
+    for (l1 in intersect(names(re$data),names(add$data))) {
+      mat = re$data[[l1]]
+      mat2 = add$data[[l1]]
+      m <- matrix(0, nrow = length(genes), ncol = ncol(mat)+ncol(mat2))
+      colnames(m) <- c(colnames(mat),colnames(mat2))
+      rownames(m) <- genes
+      m[rownames(mat), 1:ncol(mat)] <- mat
+      m[rownames(mat2), (ncol(mat)+1):ncol(m)] <- mat2
+
+      re$data[[l1]]=m
+    }
+    for (n in setdiff(names(add$gene.info),"Gene")) {
+      new.gene.info[[n]] = NA
+      new.gene.info[rownames(add$gene.info),n] = if (is.factor(add$gene.info[[n]])) as.character(add$gene.info[[n]]) else add$gene.info[[n]]
+    }
+    for (n in setdiff(names(re$gene.info),"Gene")) {
+      if (!n %in% names(new.gene.info)) new.gene.info[[n]] = NA
+      new.gene.info[rownames(re$gene.info),n] = if (is.factor(re$gene.info[[n]])) as.character(re$gene.info[[n]]) else re$gene.info[[n]]
+    }
+    # make to factor again!
+    for (n in setdiff(union(names(re$gene.info),names(add$gene.info)),"Gene")) {
+      if ((!n %in% names(add$gene.info) || is.factor(add$gene.info[[n]])) && (!n %in% names(re$gene.info) || is.factor(re$gene.info[[n]]))) {
+        levels = union(levels(re$gene.info[[n]]), levels(add$gene.info[[n]]))
+        new.gene.info[[n]] = factor(new.gene.info[[n]],levels)
       }
-      df=setNames(data.frame(r),common)
-      cd=if (is.null(cd)) df else cbind(cd,df)
     }
-    for (re.only in setdiff(names(re$coldata),names(add$coldata))) {
-      r=c(re$coldata[[re.only]],rep(NA,nrow(add$coldata)))
-      df=setNames(data.frame(r),re.only)
-      cd=if (is.null(cd)) df else cbind(cd,df)
-    }
-    for (add.only in setdiff(names(add$coldata),names(re$coldata))) {
-      r=c(rep(NA,nrow(re$coldata)),add$coldata[[add.only]])
-      df=setNames(data.frame(r),add.only)
-      cd=if (is.null(cd)) df else cbind(cd,df)
-    }
-    rownames(cd)=c(rownames(re$coldata),rownames(add$coldata))
-    re$coldata=cd
+    rownames(new.gene.info)=NULL
+    re$gene.info = new.gene.info
 
-    for (n in names(re$data)) re$data[[n]]=cbind(re$data[[n]],add$data[[n]])
+    # analyses
+    analyses = re$analysis
+    re = DropAnalysis(re)
+    for (ana in names(analyses))
+      re=AddAnalysis(re,name=ana,analyses[[ana]],warn.genes = FALSE)
+    for (ana in Analyses(add))
+      re=AddAnalysis(re,name=ana,add$analysis[[ana]],warn.genes = FALSE)
 
+
+  } else {
     # add potential additional gene annotations
     gi=GeneInfo(add)
     for (n in names(gi)) {
       if (!n %in% names(GeneInfo(re))) {
         GeneInfo(re,column = n)=gi[[n]]
       } else if (!all(GeneInfo(re)[[n]]==gi[[n]])) {
-        GeneInfo(re,column = paste0(n,".",names(list)[i]))=gi[[n]]
-        if (is.null(names(list)[i])) stop("Found columns by the same name in the gene info tables with distinct content; please specify names when calling merge!")
+        GeneInfo(re,column = paste0(n,".",addname))=gi[[n]]
+        if (is.null(addname)) stop("Found columns by the same name in the gene info tables with distinct content; please specify names when calling merge!")
       }
     }
-
+    for (n in intersect(names(re$data),names(add$data))) re$data[[n]]=cbind(re$data[[n]],add$data[[n]])
     # add analyses
     for (ana in Analyses(add))
-    re=AddAnalysis(re,name=ana,add$analysis[[ana]])
+      re=AddAnalysis(re,name=ana,add$analysis[[ana]])
   }
   re
 }
@@ -473,7 +564,7 @@ Condition <- function(data,value=NULL) {
   } else if (length(value)==1 && value=="") {
     stop("Empty string is not allowed as condition!")
   } else if (all(value %in% names(data$coldata))) {
-    data$coldata$Condition <- interaction(data$coldata[value],drop=TRUE)
+    data$coldata$Condition <- interaction(data$coldata[value],drop=TRUE,sep = " ")
   } else {
     data$coldata$Condition <- as.factor(value)
   }
@@ -580,6 +671,9 @@ GeneInfo=function(data,column=NULL,value=NULL) {
 
   } else {
     data$gene.info[[column]]=value
+    if (column=="Gene") {
+      for (n in names(data$data)) rownames(data$data[[n]])=value
+    }
   }
   data
 }
@@ -811,6 +905,7 @@ ToIndex=function(data,gene,regex=FALSE,remove.missing=TRUE,warn=TRUE) {
 #' @param summarize Should replicates by summarized? see details
 #' @param prefix Prepend each column in the output table (except for the gene.info columns) by the given prefix
 #' @param name.by A column name of \link{Coldata}(data). This is used as the rownames of the output table
+#' @param reorder.columns if TRUE, the columns in the output table are ordered according to column (otherwise according to their order in the grandR object)
 #'
 #' @return A data frame containing the desired values
 #'
@@ -852,7 +947,7 @@ ToIndex=function(data,gene,regex=FALSE,remove.missing=TRUE,warn=TRUE) {
 #' @export
 #'
 #' @concept data
-GetTable=function(data,type=DefaultSlot(data),columns=NULL,genes=Genes(data),ntr.na=TRUE,gene.info=FALSE,summarize=NULL,prefix=NULL,name.by="Symbol") {
+GetTable=function(data,type=DefaultSlot(data),columns=NULL,genes=Genes(data),ntr.na=TRUE,gene.info=FALSE,summarize=NULL,prefix=NULL,name.by="Symbol",reorder.columns=FALSE) {
   if (is.null(genes)) genes=Genes(data)
   genes=ToIndex(data,genes)
 
@@ -875,14 +970,14 @@ GetTable=function(data,type=DefaultSlot(data),columns=NULL,genes=Genes(data),ntr
 
       columns=substitute(columns)
       cols=if (is.null(columns)) colnames(data) else eval(columns,Coldata(data),parent.frame())
-      cols=Columns(data,cols)
+      cols=Columns(data,cols,reorder = reorder.columns)
 
       if (!is.null(summarize)) {
         if (is.logical(summarize) && length(summarize)==1 && !summarize) {
           summarize=NULL
         } else {
           if (is.logical(summarize) && length(summarize)==1 && summarize) summarize=GetSummarizeMatrix(data)
-          summarize=summarize[cols,]
+          summarize=summarize[cols,,drop=FALSE]
           summarize=summarize[,colSums(summarize!=0)>1,drop=FALSE]
         }
       }
@@ -1041,14 +1136,14 @@ GetMatrix=function(data,mode.slot=DefaultSlot(data),columns=NULL,genes=Genes(dat
     } else {
       if (is.logical(summarize) && length(summarize)==1 && summarize) summarize=GetSummarizeMatrix(data)
       summarize=summarize[columns,,drop=FALSE]
-      summarize=summarize[,colSums(summarize!=0)>1,drop=FALSE]
+      summarize=summarize[,colSums(summarize!=0)>0,drop=FALSE]
     }
-
-    re=apply(summarize,2,function(cc) {
-      h=re[,cc!=0,drop=FALSE]
-      cc=cc[cc!=0]
-      apply(h,1,function(v) { v[is.na(v)] = mean(v,na.rm = TRUE); sum(v*cc)})
-    })
+    re=Summarize(re,summarize)
+    #re=apply(summarize,2,function(cc) {
+    #  h=re[,cc!=0,drop=FALSE]
+    #  cc=cc[cc!=0]
+    #  apply(h,1,function(v) { v[is.na(v)] = mean(v,na.rm = TRUE); sum(v*cc)})
+    #})
     if (!is.matrix(re)) re=matrix(re,nrow=1)
     re[is.nan(re)]=NA
     rownames(re)=Genes(data,genes,use.symbols = name.by=="Symbol")

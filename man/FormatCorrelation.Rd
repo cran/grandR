@@ -10,7 +10,8 @@ FormatCorrelation(
   coeff.format = "\%.2f",
   p.format = "\%.2g",
   slope.format = NULL,
-  rmsd.format = NULL
+  rmsd.format = NULL,
+  min.obs = 5
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ FormatCorrelation(
 \item{slope.format}{format string for the slope (see \link{sprintf}); can be NULL (don't output the slope)}
 
 \item{rmsd.format}{format string for the root mean square deviation (see \link{sprintf}); can be NULL (don't output the rmsd)}
+
+\item{min.obs}{minimum number of observations (no output outerwise)}
 }
 \value{
 a function

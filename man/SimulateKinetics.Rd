@@ -9,6 +9,7 @@ SimulateKinetics(
   d = log(2)/hl,
   hl = 2,
   f0 = NULL,
+  dropout = 0,
   min.time = -1,
   max.time = 10,
   N = 1000,
@@ -24,6 +25,8 @@ SimulateKinetics(
 \item{hl}{the RNA half-life}
 
 \item{f0}{the abundance at time t=0}
+
+\item{dropout}{the 4sU dropout factor}
 
 \item{min.time}{the start time to simulate}
 

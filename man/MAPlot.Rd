@@ -7,13 +7,10 @@
 MAPlot(
   data,
   analysis = Analyses(data)[1],
-  aest = aes(),
   p.cutoff = 0.05,
   lfc.cutoff = 1,
-  label.numbers = TRUE,
-  highlight = NULL,
-  label = NULL,
-  label.repel = 1
+  annotate.numbers = TRUE,
+  ...
 )
 }
 \arguments{
@@ -21,19 +18,13 @@ MAPlot(
 
 \item{analysis}{the analysis to plot (default: first analysis)}
 
-\item{aest}{parameter to set visual attributes of the plot}
-
 \item{p.cutoff}{p-value cutoff (default: 0.05)}
 
 \item{lfc.cutoff}{log fold change cutoff (default: 1)}
 
-\item{label.numbers}{if TRUE, label the number of genes}
+\item{annotate.numbers}{if TRUE, label the number of genes}
 
-\item{highlight}{highlight these genes; can be either numeric indices, gene names, gene symbols or a logical vector (see details)}
-
-\item{label}{label these genes; can be either numeric indices, gene names, gene symbols or a logical vector (see details)}
-
-\item{label.repel}{force to repel labels from points and each other (increase if labels overlap)}
+\item{...}{further parameters passed to \link{PlotScatter}}
 }
 \value{
 a ggplot object

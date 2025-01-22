@@ -481,18 +481,23 @@ ReadCounts=function(file, design=c(Design$Condition,Design$Replicate),classify.g
   if (!is.null(rename.sample)) conds=rename.sample(conds)
   terms=strsplit(conds,".",fixed=TRUE)[[1]]
 
-  if (length(terms)!=length(design)) stop(paste0("Design parameter is incompatible with input data: ",paste(terms,collapse=".")))
-
+  if (is.data.frame(design)) {
+  } else if (is.function(design)) {
+  } else {
+    if (length(terms)!=length(design)) stop(paste0("Design parameter is incompatible with input data: ",paste(conds,collapse=", ")))
+  }
 
   if (verbose) cat("Reading file...\n")
   data=utils::read.table(file,sep=sep,stringsAsFactors=FALSE,check.names=FALSE,header=TRUE)
   if (!is.null(filter.table)) data=filter.table(data)
 
   clss=sapply(data,class)
+  clss = gsub("integer","numeric",clss)
   if (is.null(num.samples)) firstnumeric=max(which(clss!="numeric"))+1 #min(which(clss=="numeric"))
   else firstnumeric = ((ncol(data)-num.samples+1))
   if (!all(clss[firstnumeric:length(clss)]=="numeric") || firstnumeric==1 || firstnumeric>ncol(data)) stop("Columns (except for the first n) must be numeric!")
   anno.names=colnames(data)[1:(firstnumeric-1)]
+  if (verbose) cat(sprintf("Recognized %d columns as gene data (%s).\n",firstnumeric-1,paste(anno.names,collapse = ", ")))
 
 
   #if (anyDuplicated(data[[1]])) {
@@ -504,7 +509,21 @@ ReadCounts=function(file, design=c(Design$Condition,Design$Replicate),classify.g
   if (verbose) cat("Processing...\n")
 
   if (!is.null(rename.sample)) colnames(data)[firstnumeric:ncol(data)]=sapply(colnames(data)[firstnumeric:ncol(data)],rename.sample) # let's use sapply, we have no idea whether the function works with vectorization
-  coldata=MakeColdata(colnames(data)[firstnumeric:ncol(data)],design)
+
+  conds = colnames(data)[firstnumeric:ncol(data)]
+  if (is.data.frame(design)) {
+    design=as.data.frame(design) # in case it's a tibble or similar
+    if (length(conds)!=nrow(design)) stop(paste0("Design parameter (table) is incompatible with input data: ",paste(conds,collapse=", ")))
+    if (is.null(design$Name) || !all(design$Name==conds)) stop(paste0("Design parameter (table) must contain a Name column corresponding to the sample names!"))
+    coldata=design
+    rownames(coldata)=coldata$Name
+  } else if (is.function(design)) {
+    coldata=design(conds)
+    if (length(conds)!=nrow(coldata)) stop(paste0("Design parameter (function) is incompatible with input data: ",paste(conds,collapse=", ")))
+  } else {
+    if (length(terms)!=length(design)) stop(paste0("Design parameter is incompatible with input data: ",paste(conds,collapse=", ")))
+    coldata=MakeColdata(conds,design)
+  }
 
   if ("Symbol" %in% colnames(data)) {
     index <- which(colnames(data) == "Symbol")
@@ -703,6 +722,9 @@ ReadFeatureCounts=function(file, design=c(Design$Condition,Design$Replicate),cla
 }
 
 GetTableQC=function(data,name,stop.if.not.exist=TRUE) {
+
+  if (!is.null(data$metadata$qc[[name]])) return(data$metadata$qc[[name]])
+
   ll=try.file(paste0(data$prefix,".",name),possible.suffixes = c(".tsv.gz",".tsv",""),stop.if.not.exist=stop.if.not.exist)
   if (is.null(ll)) {
     warning(paste0("Cannot find QC table ",name))
@@ -711,6 +733,13 @@ GetTableQC=function(data,name,stop.if.not.exist=TRUE) {
   header = !name %in% c("clip","strandness")
   re=read.tsv(ll$file,header=header)
   ll$callback()
+
+  # buffer it in the grandR object
+  #qc=data$metadata$qc
+  #if (is.null(qc)) qc = list()
+  #qc[[name]]=re
+  #data$metadata$qc <<- qc
+
   return(re)
 
 #  fn=paste0(data$prefix,".",name,".tsv.gz")
@@ -815,8 +844,9 @@ ReadGRAND3_sparse=function(prefix,
                            verbose=FALSE) {
 
   cols=readLines(paste0(prefix, ".targets/barcodes.tsv.gz"))
+  if (!is.null(rename.sample)) cols=sapply(cols,rename.sample) # let's use sapply, we have no idea whether the function works with vectorization
+
   conds=strsplit(cols,".",fixed=TRUE)[[1]]
-  if (!is.null(rename.sample)) conds=sapply(conds,rename.sample) # let's use sapply, we have no idea whether the function works with vectorization
 
   if (length(conds)!=length(design)) stop(paste0("Design parameter is incompatible with input data: ",paste(conds,collapse=".")))
 
@@ -864,6 +894,22 @@ ReadGRAND3_sparse=function(prefix,
   colnames(ntr)=cols
   rownames(ntr)=gene.info$Gene
   re$ntr=ntr
+
+  if (estimator=="TbBinomShape") {
+
+    if (verbose) cat("Reading LLRs...\n")
+    llr <- Matrix::readMM(paste0(prefix,".targets/4sU.llr.mtx.gz"))
+    colnames(llr)=cols
+    rownames(llr)=gene.info$Gene
+    re$llr=llr
+
+    if (verbose) cat("Reading Shapes...\n")
+    shape <- Matrix::readMM(paste0(prefix,".targets/4sU.shape.mtx.gz"))
+    colnames(shape)=cols
+    rownames(shape)=gene.info$Gene
+    re$shape=shape
+
+  }
 
   if (read.posterior && file.exists(sprintf("%s.targets/%s.%s.alpha.mtx.gz",prefix,label,estimator)) && file.exists(sprintf("%s.targets/%s.%s.beta.mtx.gz",prefix,label,estimator))) {
     if (verbose) cat("Reading posterior beta parameters...\n")
@@ -1131,6 +1177,7 @@ read.grand.internal=function(prefix, design=c(Design$Condition,Design$Replicate)
   if (!is.null(rename.sample)) colnames(data)=sapply(colnames(data),rename.sample)
 
   data$Gene = check.and.make.unique(data$Gene,label="gene names")
+  data$Symbol[data$Symbol=="null"] = data$Gene[data$Symbol=="null"]
   data$Symbol = check.and.make.unique(data$Symbol,ref=data$Gene,label="gene symbols",ref.label = "gene names")
 
   #if (anyDuplicated(data$Gene)) {
@@ -1197,6 +1244,8 @@ read.grand.internal=function(prefix, design=c(Design$Condition,Design$Replicate)
     re$ntr=correctmat(re$ntr)
     re$alpha=correctmat(re$alpha)
     re$beta=correctmat(re$beta)
+    if (!is.null(re$shape)) re$shape=correctmat(re$shape)
+    if (!is.null(re$llr)) re$llr=correctmat(re$llr)
   }
 
   checknames=function(n,a){

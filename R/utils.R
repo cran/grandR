@@ -28,7 +28,62 @@ read.tsv=function(t,verbose=FALSE,stringsAsFactors=FALSE,...) {
   t
 }
 
-confint.nls.lm=function (object, parm, level = 0.95, ...)
+smartrbind=function(a,b) {
+  # rbind data frames paying attention to columns and factor levels
+  cd=NULL
+  for (common in intersect(names(a),names(b))) {
+    if(is.factor(a[[common]])) {
+      r = c(as.character(a[[common]]),as.character(b[[common]]))
+      oll=levels(b[[common]])
+      if (is.null(oll)) oll = unique(b[[common]])
+      r=factor(r,levels=union(levels(a[[common]]),oll))
+    } else {
+      r = c(a[[common]],b[[common]])
+    }
+    df=setNames(data.frame(r),common)
+    cd=if (is.null(cd)) df else cbind(cd,df)
+  }
+  for (re.only in setdiff(names(a),names(b))) {
+    r=c(a[[re.only]],rep(NA,nrow(b)))
+    df=setNames(data.frame(r),re.only)
+    cd=if (is.null(cd)) df else cbind(cd,df)
+  }
+  for (add.only in setdiff(names(b),names(a))) {
+    r=c(rep(NA,nrow(a)),b[[add.only]])
+    df=setNames(data.frame(r),add.only)
+    cd=if (is.null(cd)) df else cbind(cd,df)
+  }
+  rownames(cd)=make.unique(c(rownames(a),rownames(b)))
+  cd
+}
+
+#' Summarize a data matrix
+#'
+#' Helper function to work in conjunction with \link{GetMatrix} or similar to obtain a summarized matrix.
+#'
+#' @param mat the matrix to summarize
+#' @param summarize.mat the matrix defining how to summarize (see details)
+#'
+#' @details
+#' The summarize.mat can be obtained via \link{GetSummarizeMatrix}. If there are missing (NA) values in the matrix, they are imputed from the rest (average)
+#'
+#' @return the summarized matrix
+#' @export
+#'
+#' @concept data
+Summarize=function(mat,summarize.mat) {
+  summarize.mat=summarize.mat[,colSums(summarize.mat!=0)>0,drop=FALSE]
+
+  apply(summarize.mat,2,function(cc) {
+    h=mat[,cc!=0,drop=FALSE]
+    cc=cc[cc!=0]
+    apply(h,1,function(v) { if (all(is.na(v))) NA else {v[is.na(v)] = mean(v,na.rm = TRUE); sum(v*cc)}})
+  })
+}
+
+
+
+confint_nls=function (object, parm, level = 0.95, ...)
 {
   cc <- coef(object)
   if (missing(parm))
@@ -119,6 +174,17 @@ Defer=function(FUN,...,add=NULL, cache=TRUE,width.height=NULL) {
   re
 }
 
+try.call.ignore.unused=function(FUN,...) {
+    tryCatch({
+      FUN(...)
+    }, error = function(e) {
+      l=list(...)
+      keep = !sapply(names(l),function(n) n!="" && grepl(paste0(n," = "),e$message))
+      l=l[keep]
+      do.call(FUN,l)
+    })
+}
+
 
 #' Convert a structure into a vector
 #'
@@ -204,7 +270,7 @@ estimate.dispersion=function(ss) {
   dds=DESeq2::estimateDispersions(dds,quiet=TRUE)
   disp=DESeq2::dispersions(dds)
   disp[is.na(disp)]=0.1 # ss=0 0 0 ...
-  disp
+  setNames(disp,rownames(ss))
 }
 
 GetField=function(name,field,sep=".") sapply(strsplit(as.character(name),sep,fixed=TRUE),function(v) v[field])
@@ -216,6 +282,7 @@ GetField=function(name,field,sep=".") sapply(strsplit(as.character(name),sep,fix
 #'
 #' @param ... forwarded to lapply or parallel::mclapply
 #' @param seed Seed for the random number generator
+#' @param enforce if TRUE, do it parallelized no matter what IsParallel() says, if FALSE do it non-parallelized no matter what IsParallel() says
 #'
 #' @details If the code uses random number specify the seed to make it deterministic
 #'
@@ -223,11 +290,14 @@ GetField=function(name,field,sep=".") sapply(strsplit(as.character(name),sep,fix
 #' @export
 #'
 #' @concept helper
-psapply=function(...,seed=NULL) {simplify2array(plapply(...,seed=seed))}
+psapply=function(...,seed=NULL, enforce = NA) {simplify2array(plapply(...,seed=seed,enforce=enforce))}
 #' @rdname psapply
 #' @export
-plapply=function(...,seed=NULL) {
-  if (!IsParallel()) return(opt$lapply(...))
+plapply=function(...,seed=NULL, enforce = NA) {
+
+  parallel = if (is.na(enforce)) IsParallel() else enforce
+
+  if (!parallel) return(lapply(...))
 
   if (!is.null(seed)) {
     rng=RNGkind()[1]
@@ -235,7 +305,7 @@ plapply=function(...,seed=NULL) {
     set.seed(seed)
   }
 
-  re=opt$lapply(...)
+  re=if (parallel) parallel::mclapply(...,mc.cores=opt$nworkers) else lapply(...)
 
   if (!is.null(seed)) {
    RNGkind(rng)
@@ -246,8 +316,8 @@ plapply=function(...,seed=NULL) {
 
 
 opt <- new.env()
-opt$lapply=function(...) lapply(...)
-opt$sapply=function(...) simplify2array(opt$lapply(...))
+#opt$lapply=function(...) lapply(...)
+#opt$sapply=function(...) simplify2array(opt$lapply(...))
 opt$nworkers=0
 opt$singlemsg=list()
 
@@ -278,10 +348,10 @@ SetParallel=function(cores=max(1,parallel::detectCores()-2)) {
       warning("Parallelism is not supported under windows. Will use a single thread!")
       opt$nworkers=0
     } else {
-      opt$lapply<-function(...) parallel::mclapply(...,mc.cores=cores)
+      #opt$lapply<-function(...) parallel::mclapply(...,mc.cores=cores)
     }
   } else {
-    opt$lapply<-function(...) lapply(...)
+    #opt$lapply<-function(...) lapply(...)
   }
 }
 

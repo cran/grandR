@@ -13,6 +13,7 @@ PlotGeneProgressiveTimecourse(
   exact.tics = TRUE,
   show.CI = FALSE,
   return.tables = FALSE,
+  rescale = TRUE,
   ...
 )
 }
@@ -32,6 +33,8 @@ PlotGeneProgressiveTimecourse(
 \item{show.CI}{show confidence intervals; one of TRUE/FALSE (default: FALSE)}
 
 \item{return.tables}{also return the tables used for plotting}
+
+\item{rescale}{for type=ntr or type=chase, rescale all samples to the same total value?}
 
 \item{...}{given to the fitting procedures}
 }

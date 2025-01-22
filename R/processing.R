@@ -125,7 +125,7 @@ ComputeSteadyStateHalfLives=function(data,time=Design$dur.4sU,name="HL", columns
       pmin(comp.hl(p = ntrs[,i],time = time[i]),max.HL),
       pmin(comp.hl(p = lower[,i],time = time[i]),max.HL)
     )))
-    colnames(hls)=paste0(rep(c("CI.lower.","Half-life","CI.upper."),ncol(hls)),rep(columns,each=3))
+    colnames(hls)=paste0(rep(c("Half-life.lower.","Half-life.MAP.","Half-life.upper."),ncol(ntrs)),rep(columns,each=3))
   }
   else {
     hls = sapply(columns,function(i) comp.hl(p = ntrs[,i],time = time[i]))
@@ -395,7 +395,7 @@ FilterGenes=function(data,mode.slot='count',minval=100,mincol=ncol(data)/2,min.c
     t=GetMatrix(data,mode.slot=mode.slot,summarize = summi)
     use=Matrix::rowSums(t>=minval,na.rm=TRUE)>=mincol
     #use=apply(t,1,function(v) sum(v>=minval,na.rm=TRUE)>=mincol)
-    if (!is.null(keep)) use = use | rownames(t) %in% rownames(t[keep,])
+    if (!is.null(keep)) use = use | (1:length(use)) %in% ToIndex(data,keep)
   }
   use=ToIndex(data,use)
 
@@ -437,6 +437,31 @@ ComputeExpressionPercentage=function(data,name,genes=Genes(data),mode.slot=Defau
   percentage=gof/total
   if (multiply.by.100) percentage=percentage*100
   Coldata(data,name)=percentage
+  data
+}
+
+#' Total expression computation
+#'
+#' Compute the total expression for a particular set of genes.
+#'
+#' @param data the grandR object
+#' @param name the new name by which this is added to the Coldata
+#' @param genes define the set of genes to compute the percentage for
+#' @param mode.slot which mode.slot to take the values for computing the percentage from
+#'
+#' @seealso \code{\link{Coldata}}
+#'
+#' @details Genes can be referred to by their names, symbols, row numbers in the gene table, or a logical vector referring to the gene table rows.
+#'
+#' @details To refer to data slots, the mode.slot syntax can be used: Each name is either a data slot, or one of (new,old,total)
+#' followed by a dot followed by a slot. For new or old, the data slot value is multiplied by ntr or 1-ntr. This can be used e.g. to filter by \emph{new counts}.
+#'
+#' @return a new grandR object having the total expression in its Coldata table
+#' @export
+#'
+#' @concept data
+ComputeTotalExpression=function(data,name,genes=Genes(data),mode.slot=DefaultSlot(data)) {
+  Coldata(data,name)=Matrix::colSums(GetMatrix(data,mode.slot=mode.slot,genes = genes))
   data
 }
 

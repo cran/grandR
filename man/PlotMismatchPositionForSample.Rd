@@ -8,7 +8,8 @@ PlotMismatchPositionForSample(
   data,
   sample,
   orientation = NULL,
-  category = NULL
+  category = NULL,
+  max.pos = 2500
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ PlotMismatchPositionForSample(
 \item{orientation}{restrict to either Sense or Antisense; can be NULL}
 
 \item{category}{restrict to a specific category (see \link{GetDiagnosticParameters}); can be NULL}
+
+\item{max.pos}{remove everything behind this position}
 }
 \value{
 a list with a ggplot object, a description, and the desired size for the plot

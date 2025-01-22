@@ -13,7 +13,8 @@ GetTable(
   gene.info = FALSE,
   summarize = NULL,
   prefix = NULL,
-  name.by = "Symbol"
+  name.by = "Symbol",
+  reorder.columns = FALSE
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ GetTable(
 \item{prefix}{Prepend each column in the output table (except for the gene.info columns) by the given prefix}
 
 \item{name.by}{A column name of \link{Coldata}(data). This is used as the rownames of the output table}
+
+\item{reorder.columns}{if TRUE, the columns in the output table are ordered according to column (otherwise according to their order in the grandR object)}
 }
 \value{
 A data frame containing the desired values

@@ -9,6 +9,7 @@ ServeGrandR(
   table = NULL,
   sizes = NA,
   height = 400,
+  floating.size = c(350, 350),
   plot.gene = NULL,
   plot.global = NULL,
   plot.window = NULL,
@@ -28,13 +29,15 @@ ServeGrandR(
 
 \item{height}{the height for the gene plots in pixel}
 
+\item{floating.size}{either a vector (width,height) for all plots in floating windows or a named list of such vectors for each floating window}
+
 \item{plot.gene}{a list of gene plots; can be NULL, then the stored gene plots are used (see \link{Plots})}
 
 \item{plot.global}{a list of global plots; can be NULL, then the stored global plots are used (see \link{Plots})}
 
 \item{plot.window}{a list of static plots to show in a floating window; see details}
 
-\item{highlight}{a vector of gene names that are highlighted in the beginning}
+\item{highlight}{a vector of gene names that are highlighted in the beginning; can also be a column name in the (first) table}
 
 \item{df.identifier}{the main identifier (column name) from the table; this is used when calling the gene plot functions;}
 

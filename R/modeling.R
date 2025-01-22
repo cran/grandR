@@ -515,8 +515,6 @@ FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Desig
 
     stopifnot(time %in% names(Coldata(data)))
 
-    lvl = median(GetData(data,mode.slot=slot,genes=gene,ntr.na = FALSE)$Value)
-
     newdf=GetData(data,mode.slot=if (chase) "ntr" else paste0("new.",slot),genes=gene,ntr.na = FALSE)
     newdf$use=1:nrow(newdf) %in% (1:nrow(newdf))[use.new]
     newdf$time=newdf[[time]]
@@ -556,7 +554,7 @@ FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Desig
                        control=minpack.lm::nls.lm.control(maxiter = maxiter))
 
         if (model.p$niter==maxiter) return(list(data=NA,residuals=if (compute.residuals) data.frame(Name=c(as.character(odf$Name[odf$use]),as.character(ndf$Name[ndf$use])),Type=c(rep("old",nrow(ndf)),rep("new",nrow(odf))),Absolute=NA,Relative=NA) else NA,Synthesis=NA,Degradation=NA,`Half-life`=NA,conf.lower=c(NA,NA),conf.upper=c(NA,NA),f0=NA,logLik=NA,rmse=NA, rmse.new=NA, rmse.old=NA,total=NA,type="equi"))
-        conf.p=try(confint.nls.lm(model.p,level=CI.size),silent = TRUE)
+        conf.p=try(confint_nls(model.p,level=CI.size),silent = TRUE)
         if (!is.matrix(conf.p)) conf.p=matrix(c(NA,NA,NA,NA),nrow=2)
         par=setNames(model.p$par,c("s","d"))
         rmse=sqrt(model.p$deviance/(nrow(ndf)+nrow(odf)))
@@ -584,6 +582,11 @@ FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Desig
             residuals=data.frame(Name=c(as.character(odf$Name),as.character(ndf$Name)),Type=c(rep("old",nrow(ndf)),rep("new",nrow(odf))),Absolute=resi,Relative=resi/modval)
         }
         total=sum(ndf$Value)+sum(odf$Value)
+
+        lvl = GetData(data,mode.slot=slot,genes=gene,ntr.na = FALSE)
+        lvl = median(lvl$Value[lvl$Name %in% ndf$Name[ndf$use]])
+        if (chase) total=lvl
+
         syn = if (chase) lvl*unname(par['d']) else unname(par['s']) # in chase designs, at time 0 new RNA might not be at steady state level!
 
         list(data=df,
@@ -616,7 +619,7 @@ FitKineticsGeneLeastSquares=function(data,gene,slot=DefaultSlot(data),time=Desig
         if (model.m$niter==maxiter) return(list(data=NA,residuals=if (compute.residuals) data.frame(Name=c(as.character(odf$Name[odf$use]),as.character(ndf$Name[ndf$use])),Type=c(rep("old",nrow(ndf)),rep("new",nrow(odf))),Absolute=NA,Relative=NA) else NA,Synthesis=NA,Degradation=NA,`Half-life`=NA,conf.lower=c(NA,NA),conf.upper=c(NA,NA),f0=NA,logLik=NA,rmse=NA, rmse.new=NA, rmse.old=NA, total=NA,type="non.equi"))
         par=setNames(model.m$par,c("s","d"))
         f0=par[3]
-        conf.m=try(confint.nls.lm(model.m,level=CI.size),silent = TRUE)
+        conf.m=try(confint_nls(model.m,level=CI.size),silent = TRUE)
         if (!is.matrix(conf.m)) conf.m=matrix(c(NA,NA,NA,NA),nrow=2)
         rmse=sqrt(model.m$deviance/(nrow(ndf)+nrow(odf)))
         fvec=res.fun.nonequi.f0fixed(par,f0,odf,ndf)
@@ -1591,6 +1594,7 @@ TransformSnapshot=function(ntr,total,t,t0=NULL,f0=NULL,full.return=FALSE) {
 #' @param exact.tics use axis labels directly corresponding to the available labeling durations?
 #' @param show.CI show confidence intervals; one of TRUE/FALSE (default: FALSE)
 #' @param return.tables also return the tables used for plotting
+#' @param rescale for type=ntr or type=chase, rescale all samples to the same total value?
 #' @param ... given to the fitting procedures
 #'
 #' @details For each \code{\link{Condition}} there will be one panel containing the values and the corresponding model fit.
@@ -1602,7 +1606,7 @@ TransformSnapshot=function(ntr,total,t,t0=NULL,f0=NULL,full.return=FALSE) {
 #' @export
 #' @concept geneplot
 PlotGeneProgressiveTimecourse=function(data,gene,slot=DefaultSlot(data),time=Design$dur.4sU, type=c("nlls","ntr","lm"),
-                                       exact.tics=TRUE,show.CI=FALSE,return.tables=FALSE,...) {
+                                       exact.tics=TRUE,show.CI=FALSE,return.tables=FALSE, rescale = TRUE,...) {
   # R CMD check guard for non-standard evaluation
   Value <- Type <- lower <- upper <- NULL
 
@@ -1638,7 +1642,7 @@ PlotGeneProgressiveTimecourse=function(data,gene,slot=DefaultSlot(data),time=Des
     }
     df$time=df[[time]]
 
-    if (tolower(type[1])=="ntr") {
+    if (rescale & (tolower(type[1])=="ntr" || tolower(type[1])=="chase")) {
         #fac=unlist(lapply(as.character(df$Condition),function(n) fit[[n]]$f0))/df$Value[df$Type=="Total"]
         fac=unlist(lapply(1:nrow(df),function(i) {
             fit=if(is.null(Condition(data))) fit[[gene]] else fit[[as.character(df$Condition)[i]]]
@@ -1652,9 +1656,13 @@ PlotGeneProgressiveTimecourse=function(data,gene,slot=DefaultSlot(data),time=Des
         }
     }
 
-    if (tolower(type[1])=="chase") df=df[!df$no4sU,]
-
     df$Condition=if ("Condition" %in% names(df)) df$Condition else gene
+
+    if (tolower(type[1])=="chase") {
+      df=df[!df$no4sU,]
+    }
+
+
     tt=seq(0,max(df$time),length.out=100)
     df.median=plyr::ddply(df,c("Condition","Type",time,"time"),function(s) data.frame(Value=median(s$Value)))
 
@@ -1704,6 +1712,7 @@ PlotGeneProgressiveTimecourse=function(data,gene,slot=DefaultSlot(data),time=Des
 #' @param d the degradation rate (see details)
 #' @param hl the RNA half-life
 #' @param f0 the abundance at time t=0
+#' @param dropout the 4sU dropout factor
 #' @param min.time the start time to simulate
 #' @param max.time the end time to simulate
 #' @param N how many time points from min.time to max.time to simuate
@@ -1722,7 +1731,7 @@ PlotGeneProgressiveTimecourse=function(data,gene,slot=DefaultSlot(data),time=Des
 #' head(SimulateKinetics(hl=2))   # simulate steady state kinetics for an RNA with half-life 2h
 #'
 #' @concept kinetics
-SimulateKinetics=function(s=100*d,d=log(2)/hl,hl=2,f0=NULL,min.time=-1,max.time=10,N = 1000,name=NULL,out=c("Old","New","Total","NTR")) {
+SimulateKinetics=function(s=100*d,d=log(2)/hl,hl=2,f0=NULL,dropout = 0,min.time=-1,max.time=10,N = 1000,name=NULL,out=c("Old","New","Total","NTR")) {
     times=seq(min.time,max.time,length.out=N)
     if (is.numeric(s)) s = ComputeNonConstantParam(start=s)
     if (is.numeric(d)) d = ComputeNonConstantParam(start=d)
@@ -1735,6 +1744,7 @@ SimulateKinetics=function(s=100*d,d=log(2)/hl,hl=2,f0=NULL,min.time=-1,max.time=
     #new=c(rep(0,sum(times<0)),f.nonconst.linear(t = times[times>=0],f0 = 0,so = s$offset,sf=s$factor,se=s$exponent,do = d$offset,df=d$factor,de=d$exponent))
     old=c(rep(f0,sum(times<0)),f.nonconst(t = times[times>=0],f0 = f0,s=0,d=d))
     new=c(rep(0,sum(times<0)),f.nonconst(t = times[times>=0],f0 = 0,s=s,d=d))
+    new = new-dropout*new
 
     re=data.frame(
         Time=times,

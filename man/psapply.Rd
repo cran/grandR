@@ -5,14 +5,16 @@
 \alias{plapply}
 \title{Parallel (s/l)apply}
 \usage{
-psapply(..., seed = NULL)
+psapply(..., seed = NULL, enforce = NA)
 
-plapply(..., seed = NULL)
+plapply(..., seed = NULL, enforce = NA)
 }
 \arguments{
 \item{...}{forwarded to lapply or parallel::mclapply}
 
 \item{seed}{Seed for the random number generator}
+
+\item{enforce}{if TRUE, do it parallelized no matter what IsParallel() says, if FALSE do it non-parallelized no matter what IsParallel() says}
 }
 \value{
 a vector (psapply) or list (plapply)

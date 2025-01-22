@@ -7,10 +7,11 @@
 #' @param table the table to display (can be NULL or a named list; see details)
 #' @param sizes the widths for the gene plots to show (12 is full screen with); must be a vector as long as there are gene plots
 #' @param height the height for the gene plots in pixel
+#' @param floating.size either a vector (width,height) for all plots in floating windows or a named list of such vectors for each floating window
 #' @param plot.gene a list of gene plots; can be NULL, then the stored gene plots are used (see \link{Plots})
 #' @param plot.global  a list of global plots; can be NULL, then the stored global plots are used (see \link{Plots})
 #' @param plot.window a list of static plots to show in a floating window; see details
-#' @param highlight a vector of gene names that are highlighted in the beginning
+#' @param highlight a vector of gene names that are highlighted in the beginning; can also be a column name in the (first) table
 #' @param df.identifier the main identifier (column name) from the table; this is used when calling the gene plot functions;
 #' @param title the title to show in the header of the website
 #' @param show.sessionInfo whether to show session info
@@ -47,6 +48,7 @@
 ServeGrandR=function(data,
                      table=NULL,
                      sizes=NA,height=400,
+                     floating.size=c(350,350),
                      plot.gene=NULL,
                      plot.global=NULL,
                      plot.window=NULL,
@@ -57,6 +59,18 @@ ServeGrandR=function(data,
                      help=list(".Q: multiple testing corrected p values",".LFC: log2 fold changes") ) {
 
   checkPackages(c("shiny","rclipboard","DT","htmltools"))
+
+  map=list()
+  my.make.names = function(a) {
+    o=a
+    if(o %in% names(map)) return(map[[o]])
+    a = make.names(a)
+    a = gsub("\\.+",".",a)
+    while (a %in% unlist(map)) a = paste0(a,"_")
+    map<<-c(map,setNames(list(a),o))
+    a
+  }
+
 
   if (is.character(data) && file.exists(data)) data = readRDS(data)
 
@@ -75,8 +89,8 @@ ServeGrandR=function(data,
     if (!df.identifier %in% names(df)) stop("Neither identifier nor row names found in table")
     table[[i]] = df
   }
-  #gene.level.map=setNames(make.names(names(table)),names(table))
-  #names(table) = make.names(names(table))
+  #gene.level.map=setNames(my.make.names(names(table)),names(table))
+  #names(table) = my.make.names(names(table))
 
   if (is.null(plot.gene)) plot.gene=data$plots$gene
   if (is.null(plot.global)) plot.global=data$plots$global
@@ -107,23 +121,35 @@ ServeGrandR=function(data,
   # after this, plot.window is either an empty list, or a list of lists.
   if (is.null(names(plot.window)) && length(plot.window)>0) stop("plot.window must have names!")
 
+  if (!is.list(floating.size)) floating.size = setNames(lapply(1:length(plot.window),function(i) floating.size),names(plot.window))
+  if (!identical(names(floating.size),names(plot.window)) || !all(sapply(floating.size,function(v) is.numeric(v) && length(v)==2))) stop("Floating size must either be a 2 vector or a named list of 2 vectors having the same length and names ans the floating windows!")
 
-  plot.wins = lapply(names(plot.window),function(n)CreateWindows(paste0("floating-",n),title=n,plots=plot.window[[n]]))
+  plot.wins = lapply(names(plot.window),function(n)CreateWindows(paste0("floating-",n),title=n,plots=plot.window[[n]],width=floating.size[[n]][1],height=floating.size[[n]][2]))
 
 
   #    plot.static=lapply(plot.static, function(p) if (is.function(p)) p(data) else p)
 
-  htmls = list.files(pattern="html$")
-  names(htmls) = gsub(".html","",htmls)
-  shiny::addResourcePath("htmls", getwd())
+  reports = list.files(pattern="html$|pdf$",recursive=TRUE)
+  reports = reports[!grepl("^grandR",reports)]
+  names(reports) = gsub(".html|.pdf","",reports)
+  names(reports) = gsub("/index","",names(reports))
+  shiny::addResourcePath("reports", getwd())
 
   if (!is.null(help) && is.list(help)) help=sprintf("<span style='padding-top:25px;'><span class='help-block well'>Table columns:%s</span></span>", paste(sapply(help,function(s) sprintf("<li><span>%s</span></li>",s)),collapse="\n"))
   server=function(input, output,session) {
 
+    if (length(highlight)==1 && highlight %in% names(table[[1]])) {
+      hg = table[[1]][[highlight]]
+      hg = if (is.character(hg)) hg!="" else as.logical(hg)
+      table[[1]][[highlight]] = factor(ifelse(hg,'x',''),levels=c('x',''))
+      highlightgenes=Genes(data,hg)
+    } else {
+      highlightgenes=Genes(data,highlight)
+      highlight = NULL
+    }
+    highlighted.genes <- shiny::reactiveValues(genes = highlightgenes,selected.gene=NULL,filtered.rows=NULL,active.table=NULL)
 
-    highlighted.genes <- shiny::reactiveValues(genes = highlight,selected.gene=NULL,filtered.rows=NULL,active.table=NULL)
-
-    win_ids = lapply(plot.wins,function(pw) pw$server(data))
+    win_ids = lapply(plot.wins,function(pw) pw$server(data,highlighted.genes))
 
     for (n in names(table)) {
       create.tab = function(ns,df) {
@@ -144,24 +170,36 @@ ServeGrandR=function(data,
           }
           obs(i)
         }
-        dttab=DT::datatable(df.rounded,
-                            callback = DT::JS(sprintf("$('div[id=\"%s\"] > div > div#buttons').css('float','left').css('margin-right','50px'); $('div[id=\"%s\"]').css('float','left'); $('div[id=\"%s\"] > div > div#buttons').append($('[id=\"%s\"]')); $('div[id=\"%s\"] > div > div#buttons').append($('[id=\"%s\"]')); $('div[id=\"%s\"] > div > div#buttons').append($('[id=\"%s\"]')); $('div[id=\"%s\"] > div > div#buttons').append($('[id=\"%s\"]')); %s",ns("tab"),ns("clip"),ns("tab"),ns("pdf"),ns("tab"),ns("downloadraw"),ns("tab"),ns("download1"),ns("tab"),ns("clip"),plot.window.adding)),
-                            selection = 'single',
-                            rownames = FALSE,
-                            filter = "top",
-                            escape = FALSE,
-                            options = list(
-                              pageLength = 10,
-                              lengthMenu =list(c(5, 10, 25, 50, 100,-1),c(5, 10, 25, 50, 100,"All")),
-                              dom = '<"#buttons">lfrtip'
-                            ))
-        dttab=DT::formatRound(dttab,names(df)[sapply(df,class)=="numeric"], 2)
-        if (any(grepl("LFC$",names(df)))) dttab=DT::formatRound(dttab,names(df)[grepl("\\.LFC$",names(df))], 2)
-        if (any(grepl("\\.Q$",names(df)))) dttab=DT::formatSignif(dttab,names(df)[grepl("\\.Q$",names(df))], 2)
-        if (any(grepl("\\.P$",names(df)))) dttab=DT::formatSignif(dttab,names(df)[grepl("\\.P$",names(df))], 2)
-        if (any(grepl("\\.Half-life$",names(df)))) dttab=DT::formatRound(dttab,names(df)[grepl("\\.Half-life$",names(df))], 2)
-        if (any(grepl("\\.Synthesis$",names(df)))) dttab=DT::formatRound(dttab,names(df)[grepl("\\.Synthesis$",names(df))], 2)
-        output$tab <- DT::renderDataTable(dttab)
+        rdf = shiny::reactiveValues(df=df.rounded)
+        output$tab <- DT::renderDataTable({
+          dttab=DT::datatable(shiny::isolate(rdf$df),
+                        callback = DT::JS(sprintf("$('div[id=\"%s\"] > div > div#buttons').css('float','left').css('margin-right','50px'); $('div[id=\"%s\"]').css('float','left'); $('div[id=\"%s\"] > div > div#buttons').append($('[id=\"%s\"]')); $('div[id=\"%s\"] > div > div#buttons').append($('[id=\"%s\"]')); $('div[id=\"%s\"] > div > div#buttons').append($('[id=\"%s\"]')); $('div[id=\"%s\"] > div > div#buttons').append($('[id=\"%s\"]')); $('div[id=\"%s\"] > div > div#buttons').append($('[id=\"%s\"]')); %s",ns("tab"),ns("clip"),ns("tab"),ns("pdf"),ns("tab"),ns("downloadraw"),ns("tab"),ns("download1"),ns("tab"),ns("highlightbutton"),ns("tab"),ns("clip"),plot.window.adding)),
+                        selection = 'single',
+                        rownames = FALSE,
+                        filter = "top",
+                        escape = FALSE,
+                        options = list(
+                          pageLength = 10,
+                          lengthMenu =list(c(5, 10, 25, 50, 100,-1),c(5, 10, 25, 50, 100,"All")),
+                          dom = '<"#buttons">lfrtip'
+                        ))
+          dttab=DT::formatRound(dttab,names(df)[sapply(df,class)=="numeric"], 2)
+          if (any(grepl("LFC$",names(df)))) dttab=DT::formatRound(dttab,names(df)[grepl("\\.LFC$",names(df))], 2)
+          if (any(grepl("\\.Q$",names(df)))) dttab=DT::formatSignif(dttab,names(df)[grepl("\\.Q$",names(df))], 2)
+          if (any(grepl("\\.P$",names(df)))) dttab=DT::formatSignif(dttab,names(df)[grepl("\\.P$",names(df))], 2)
+          if (any(grepl("\\.Half-life$",names(df)))) dttab=DT::formatRound(dttab,names(df)[grepl("\\.Half-life$",names(df))], 2)
+          if (any(grepl("\\.Synthesis$",names(df)))) dttab=DT::formatRound(dttab,names(df)[grepl("\\.Synthesis$",names(df))], 2)
+          if (length(highlight)==1 && highlight %in% names(df)) {
+            dttab = DT::formatStyle(dttab,highlight,target = 'row',
+                                    backgroundColor = DT::styleEqual(c('x', ''), c('#ffcccb', 'white')))
+            dttab = DT::formatStyle(dttab,highlight,target='cell',
+                                    fontWeight = 'bold',
+                                    textAlign = 'center')
+          }
+          dttab
+        })
+        shiny::observe({DT::replaceData(DT::dataTableProxy(ns('tab')), rdf$df,rownames = FALSE)})
+
         output$download1 <- shiny::downloadHandler(
           filename = function() {
             paste0(title,"-", Sys.Date(), ".tsv")
@@ -205,20 +243,55 @@ ServeGrandR=function(data,
             )
           ))
         })
+
+
         output$downloadrawdoit <- shiny::downloadHandler(
           filename = function() {
             paste0(title,"-", Sys.Date(), ".tsv.gz")
           },
           content = function(file) {
             on.exit(shiny::removeModal())
-            ggg=as.character(df[highlighted.genes$filtered.rows,1])
+            ggg=as.character(df[highlighted.genes$filtered.rows,df.identifier])
             tab=GetTable(data,type=input[[ns("datamodality")]],ntr.na = FALSE,gene.info = TRUE,genes = ggg)
             utils::write.table(tab, gzfile(file),row.names=F,col.names=T,quote=F,sep="\t")
           }
         )
 
+        shiny::observeEvent(input[[ns("highlightbutton")]], {
+          shiny::showModal(shiny::modalDialog(
+            htmltools::tags$p(sprintf("Filtered genes (n=%d)",length(highlighted.genes$filtered.rows)), style = "font-weight: bold;"),
+            shiny::actionButton(ns("sethighlightdia"),label="Set as"),
+            shiny::actionButton(ns("unionhighlightdia"),label="Union with"),
+            shiny::actionButton(ns("intersecthighlightdia"),label="Intersect wit"),
+            shiny::actionButton(ns("subhighlightdia"),label="Subtract from"),
+            htmltools::tags$div(style = "height: 20px;"),
+            shiny::textAreaInput(ns("highlightedgenesdia"), label=sprintf("... highlighted genes (n=%d)",length(highlighted.genes$genes)),height = 150,cols=40, value = paste0(highlighted.genes$genes,collapse="\n")),
+
+            title="Highlighted genes from table genes",easyClose=TRUE,footer=htmltools::tagList(
+              shiny::modalButton("Close")
+            )
+          ))
+        })
+
+        shiny::observeEvent(input[[ns("sethighlightdia")]], {
+          highlighted.genes$genes <- df[[df.identifier]][highlighted.genes$filtered.rows]
+          shiny::updateTextAreaInput(session, ns("highlightedgenesdia"), value = paste0(highlighted.genes$genes,collapse="\n"), label=sprintf("... highlighted genes (n=%d)",length(highlighted.genes$genes)))
+        })
+        shiny::observeEvent(input[[ns("unionhighlightdia")]], {
+          highlighted.genes$genes <- union(highlighted.genes$genes,df[[df.identifier]][highlighted.genes$filtered.rows])
+          shiny::updateTextAreaInput(session, ns("highlightedgenesdia"), value = paste0(highlighted.genes$genes,collapse="\n"), label=sprintf("... highlighted genes (n=%d)",length(highlighted.genes$genes)))
+        })
+        shiny::observeEvent(input[[ns("intersecthighlightdia")]], {
+          highlighted.genes$genes <- intersect(highlighted.genes$genes,df[[df.identifier]][highlighted.genes$filtered.rows])
+          shiny::updateTextAreaInput(session, ns("highlightedgenesdia"), value = paste0(highlighted.genes$genes,collapse="\n"), label=sprintf("... highlighted genes (n=%d)",length(highlighted.genes$genes)))
+        })
+        shiny::observeEvent(input[[ns("subhighlightdia")]], {
+          highlighted.genes$genes <- setdiff(highlighted.genes$genes,df[[df.identifier]][highlighted.genes$filtered.rows])
+          shiny::updateTextAreaInput(session, ns("highlightedgenesdia"), value = paste0(highlighted.genes$genes,collapse="\n"), label=sprintf("... highlighted genes (n=%d)",length(highlighted.genes$genes)))
+        })
+
         output$clip <- shiny::renderUI({
-          nn=if(.row_names_info(df)<0) df[highlighted.genes$filtered.rows,1] else rownames(df)[highlighted.genes$filtered.rows]
+          nn=if(.row_names_info(df)<0) df[highlighted.genes$filtered.rows,df.identifier] else rownames(df)[highlighted.genes$filtered.rows]
           rclipboard::rclipButton(ns("clipbtn"), "Copy", paste(nn,collapse="\n"), modal=TRUE,icon=shiny::icon("clipboard"))
         })
         shiny::observeEvent(input[[ns("clipbtn")]], {shiny::showNotification(
@@ -235,6 +308,11 @@ ServeGrandR=function(data,
           highlighted.genes$filtered.rows = input[[ns("tab_rows_all")]]
         })
 
+        if (length(highlight)==1 && highlight %in% names(df)) {
+          shiny::observe({
+            rdf$df[[highlight]] = factor(ifelse(rdf$df[[df.identifier]] %in% highlighted.genes$genes,'x',''),levels=c('x',''))
+          })
+        }
         output
       }
 
@@ -290,6 +368,7 @@ ServeGrandR=function(data,
       create.plotglobal=function(n) {
         env=new.env()
         env$n=n
+        env$ddf <- shiny::reactiveValues(ddf=NULL)
         getwidth=function() {
           w=attr(plot.global[[n]],"width")
           if (is.null(w)) w=7*100
@@ -300,43 +379,60 @@ ServeGrandR=function(data,
           if (is.null(w)) w=7*100
           w
         }
+        shiny::observe({
+          brushgenes=if (is.null(ddf$ddf)) NULL else rownames(shiny::brushedPoints(ddf$ddf, input[[my.make.names(paste0(n,"plotsetbrush"))]]))
+          shiny::updateTextAreaInput(session, my.make.names(paste0(n,"plotsetgenes")), value = paste(brushgenes,collapse="\n"), label=sprintf("Selected genes (n=%d)",length(brushgenes)))
+        },env=env)
+
         shiny::renderPlot({
-          re=plot.global[[n]](data,highlight=highlighted.genes$genes,label=highlighted.genes$selected.gene)
+          re=try.call.ignore.unused(plot.global[[n]],data,highlight=highlighted.genes$genes,label=highlighted.genes$selected.gene)
           ddf$ddf=attr(re,"df")
           re
           },width=getwidth,height=getheight,env=env)
       }
-      output[[make.names(paste0(n,"plotset"))]]=create.plotglobal(n)
-      e=new.env()
-      e$n=n
-      ddf <- shiny::reactiveValues(ddf=NULL)
-      shiny::observe({
-        brushgenes=if (is.null(ddf$ddf)) NULL else rownames(shiny::brushedPoints(ddf$ddf, input[[make.names(paste0(n,"plotsetbrush"))]]))
-        shiny::updateTextAreaInput(session, make.names(paste0(n,"plotsetgenes")), value = paste(brushgenes,collapse="\n"), label=sprintf("Selected genes (n=%d)",length(brushgenes)))
-      },env=e)
+      output[[my.make.names(paste0(n,"plotset"))]]=create.plotglobal(n)
+
     }
+
+
+
     shiny::observe({
       shiny::updateTextAreaInput(session, "highlightedgenes", value = paste0(highlighted.genes$genes,collapse="\n"), label=sprintf("Highlighted genes (n=%d)",length(highlighted.genes$genes)))
     })
     shiny::observeEvent(input[["updatehighlight"]], {
       highlighted.genes$genes <- strsplit(input[["highlightedgenes"]],"\n")[[1]]
-      for (n in names(plot.global)) session$resetBrush(make.names(paste0(n,"plotsetbrush")))
+      for (n in names(plot.global)) session$resetBrush(my.make.names(paste0(n,"plotsetbrush")))
     })
 
 
     lapply(names(plot.global),function(n) {
       shiny::observeEvent(highlighted.genes$selected.gene, {
-        session$resetBrush(make.names(paste0(n,"plotsetbrush")))
+        session$resetBrush(my.make.names(paste0(n,"plotsetbrush")))
       })
 
-      shiny::observeEvent(input[[make.names(paste0(n,"sethighlight"))]], {
-        highlighted.genes$genes <- strsplit(input[[make.names(paste0(n,"plotsetgenes"))]],"\n")[[1]]
-        session$resetBrush(make.names(paste0(n,"plotsetbrush")))
+      shiny::observe({
+        shiny::updateTextAreaInput(session, my.make.names(paste0(n,"plotsetgeneshighlight")), value = paste0(highlighted.genes$genes,collapse="\n"), label=sprintf("... highlighted genes (n=%d)",length(highlighted.genes$genes)))
       })
 
-      shiny::observeEvent(input[[make.names(paste0(n,"addhighlight"))]], {
-        highlighted.genes$genes <- c(highlighted.genes$genes,strsplit(input[[make.names(paste0(n,"plotsetgenes"))]],"\n")[[1]])
-        session$resetBrush(make.names(paste0(n,"plotsetbrush")))
+
+      shiny::observeEvent(input[[my.make.names(paste0(n,"sethighlight"))]], {
+        highlighted.genes$genes <- strsplit(input[[my.make.names(paste0(n,"plotsetgenes"))]],"\n")[[1]]
+        session$resetBrush(my.make.names(paste0(n,"plotsetbrush")))
+      })
+
+      shiny::observeEvent(input[[my.make.names(paste0(n,"unionhighlight"))]], {
+        highlighted.genes$genes <- union(highlighted.genes$genes,strsplit(input[[my.make.names(paste0(n,"plotsetgenes"))]],"\n")[[1]])
+        session$resetBrush(my.make.names(paste0(n,"plotsetbrush")))
+      })
+
+      shiny::observeEvent(input[[my.make.names(paste0(n,"intersecthighlight"))]], {
+        highlighted.genes$genes <- intersect(highlighted.genes$genes,strsplit(input[[my.make.names(paste0(n,"plotsetgenes"))]],"\n")[[1]])
+        session$resetBrush(my.make.names(paste0(n,"plotsetbrush")))
+      })
+
+      shiny::observeEvent(input[[my.make.names(paste0(n,"subhighlight"))]], {
+        highlighted.genes$genes <- setdiff(highlighted.genes$genes,strsplit(input[[my.make.names(paste0(n,"plotsetgenes"))]],"\n")[[1]])
+        session$resetBrush(my.make.names(paste0(n,"plotsetbrush")))
       })
     })
 
@@ -349,10 +445,10 @@ ServeGrandR=function(data,
 
   html.ui=NULL
   html.list.ui = ""
-  if (length(htmls)>0) {
+  if (length(reports)>0) {
     html.ui=shiny::navbarMenu(title = "Reports")
-    appends = sapply(names(htmls),function(name) {
-      sprintf("$('.dropdown-toggle[data-value=\"Reports\"] + .dropdown-menu').append('<li><a target=\"_blank\" href=\"%s\">%s</a></li>');",paste0("htmls/",htmls[name]),name)
+    appends = sapply(names(reports),function(name) {
+      sprintf("$('.dropdown-toggle[data-value=\"Reports\"] + .dropdown-menu').append('<li><a target=\"_blank\" href=\"%s\">%s</a></li>');",paste0("reports/",reports[name]),name)
     })
     html.list.ui = paste(appends,collapse="\n")
   }
@@ -378,6 +474,7 @@ ServeGrandR=function(data,
                       shiny::fluidRow(
                         rclipboard::rclipboardSetup(),
                         shiny::uiOutput(ns("clip")),
+                        shiny::actionButton(ns("highlightbutton"),"Highlights",icon = shiny::icon("heart")),
                         shiny::downloadButton(ns("download1"),"Table"),
                         shiny::actionButton(ns("downloadraw"),"Data",icon = shiny::icon("download")),
                         shiny::actionButton(ns("pdf"),"PDF",icon = shiny::icon("file-pdf")),
@@ -394,6 +491,7 @@ ServeGrandR=function(data,
                          shiny::fluidRow(
                            rclipboard::rclipboardSetup(),
                            shiny::uiOutput(ns("clip")),
+                           shiny::actionButton(ns("highlightbutton"),"Highlighted Genes",icon = shiny::icon("heart-empty")),
                            shiny::downloadButton(ns("download1"),"Table"),
                            shiny::actionButton(ns("downloadraw"),"Data",icon = shiny::icon("download")),
                            shiny::actionButton(ns("pdf"),"PDF",icon = shiny::icon("file-pdf")),
@@ -411,11 +509,16 @@ ServeGrandR=function(data,
 
     plist=c(lapply(names(plot.global),function(n) shiny::tabPanel(n,
                                                                   shiny::fluidRow(
-                                                                    shiny::column(8,shiny::plotOutput(make.names(paste0(n,"plotset")),brush = shiny::brushOpts(id = make.names(paste0(n,"plotsetbrush"))))),
+                                                                    shiny::column(8,shiny::plotOutput(my.make.names(paste0(n,"plotset")),brush = shiny::brushOpts(id = my.make.names(paste0(n,"plotsetbrush"))))),
                                                                     shiny::column(4,
-                                                                                  shiny::textAreaInput(make.names(paste0(n,"plotsetgenes")), label="Selected genes",height = 300,cols=40),
-                                                                                  shiny::actionButton(make.names(paste0(n,"sethighlight")), label="Set highlight"),
-                                                                                  shiny::actionButton(make.names(paste0(n,"addhighlight")), label="Add highlight")
+                                                                                  shiny::textAreaInput(my.make.names(paste0(n,"plotsetgenes")), label="Selected genes",height = 300,cols=40),
+                                                                                  shiny::actionButton(my.make.names(paste0(n,"sethighlight")), label="Set as"),
+                                                                                  shiny::actionButton(my.make.names(paste0(n,"unionhighlight")), label="Union with"),
+                                                                                  shiny::actionButton(my.make.names(paste0(n,"intersecthighlight")), label="Intersect with"),
+                                                                                  shiny::actionButton(my.make.names(paste0(n,"subhighlight")), label="Subtract from"),
+                                                                                  htmltools::tags$div(style = "height: 20px;"),
+                                                                                  shiny::textAreaInput(my.make.names(paste0(n,"plotsetgeneshighlight")), label="... highlighted genes",height = 200,cols=40),
+
                                                                     )
                                                                   )
     )),list(title="Global level"))
@@ -500,7 +603,7 @@ ServeGrandR=function(data,
 
 
 InitWindows = function() {
-  jscode = "shinyjs.toggleZ = function(params){ $('.plot-window').removeClass('plot-window-topmost'); $('#'+params).addClass('plot-window-topmost');}"
+  jscode = "shinyjs.toggleZ = function(params){ $('.plot-window').removeClass('plot-window-topmost'); $('div[id=\\''+params+'\\']').addClass('plot-window-topmost');  }"
   list(shinyjs::useShinyjs(),
        shinyjs::extendShinyjs(text=jscode,functions="toggleZ"),
        htmltools::tags$head(htmltools::tags$style(htmltools::HTML("
@@ -583,19 +686,22 @@ CreateWindows = function(id,plots,title="Plots",width=350,height=350,nrow=NULL,n
       )
     )
   },
-  server=function(data) {
+  server=function(data,highlighted.genes) {
     shiny::moduleServer(id, function(input, output, session) {
       ns <- session$ns
-      for (i in 1:length(plots)) {
-        oo=function(i) output[[paste0("plot",i)]] = shiny::renderPlot({ plots[[i]](data) })
-        oo(i)
+      if (selection==FALSE) {
+        for (i in 1:length(plots)) {
+          oo=function(i) output[[paste0("plot",i)]] = shiny::renderPlot({ try.call.ignore.unused(plots[[i]],data,highlight=highlighted.genes$genes,label=highlighted.genes$selected.gene) })
+          oo(i)
+        }
+      } else {
+        shiny::observeEvent(input$plotSelect, {
+          output[["plot"]] = shiny::renderPlot({ try.call.ignore.unused(plots[[input$plotSelect]],data,highlight=highlighted.genes$genes,label=highlighted.genes$selected.gene) })
+        })
       }
       shiny::observeEvent(input$closePlotWindow, {
         shinyjs::js$toggleZ(shiny::NS(id)("plotWindow"))
         shinyjs::hide("plotWindow")
-      })
-      shiny::observeEvent(input$plotSelect, {
-        output[["plot"]] = shiny::renderPlot({ plots[[input$plotSelect]]() })
       })
     })
     shiny::NS(id)("plotWindow")

@@ -49,7 +49,7 @@ RenameColumns(data, map = NULL, fun = NULL)
 
 SwapColumns(data, s1, s2)
 
-\method{merge}{grandR}(..., list = NULL, column.name = Design$Origin)
+\method{merge}{grandR}(..., list = NULL, by.columns = TRUE, column.name = Design$Origin)
 }
 \arguments{
 \item{prefix}{Can either be the prefix used to call GRAND-SLAM with, or the main output file ($prefix.tsv.gz);
@@ -88,6 +88,8 @@ if the RCurl package is installed, this can also be a URL}
 \item{s1, s2}{column names}
 
 \item{list}{a list of grandR objects}
+
+\item{by.columns}{merge by columns (i.e. add additional columsn to the first) or not (i.e. add additional genes to the first)}
 
 \item{column.name}{a new name for the Coldata table to annotate the merged objects}
 }

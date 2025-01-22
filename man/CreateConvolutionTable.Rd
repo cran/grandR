@@ -20,3 +20,4 @@ Create Convolution Table from a Seurat object
 \details{
 This function returns a table which can be used as input for GRAND3. Note that a data set contatining multiple time points should be split before convolution.
 }
+\concept{data}

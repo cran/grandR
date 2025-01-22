@@ -9,6 +9,7 @@ PlotScatter(
   x = NULL,
   y = NULL,
   analysis = NULL,
+  mode.slot = NULL,
   xcol = NULL,
   ycol = NULL,
   xlab = NULL,
@@ -35,6 +36,7 @@ PlotScatter(
   facet = NULL,
   color = NULL,
   colorpalette = NULL,
+  colorbreaks = NULL,
   color.label = NULL,
   density.margin = "n",
   density.n = 100,
@@ -55,6 +57,8 @@ PlotScatter(
 \item{y}{an expression to compute the y value or a character corresponding to a sample (or cell) name or a fully qualified analysis result name (see details)}
 
 \item{analysis}{the name of an analysis table (can be NULL; see details)}
+
+\item{mode.slot}{the mode.slot (only relevant if data is a dense grandR object and analysis=NULL)}
 
 \item{xcol}{a character corresponding to a sample (or cell) name or a fully qualified analysis result name (see details)}
 
@@ -107,6 +111,8 @@ PlotScatter(
 \item{color}{either NULL (use point density colors), or a name of the \link{GeneInfo} table (use scale_color_xxx to define colors), or a color for all points}
 
 \item{colorpalette}{either NULL (use default colors), or a palette name from color brewer or viridis}
+
+\item{colorbreaks}{either NULL (use default algorithm of using quantiles of the values), or "minmax" for 5 breaks in between the minimum and maximum of the values, or the actual color breaks to distribute the colors from the palette}
 
 \item{color.label}{the label for the color legend}
 

@@ -13,7 +13,7 @@ sars <- ReadGRAND(system.file("extdata", "sars.tsv.gz", package = "grandR"),
 sars <- Normalize(sars)
 sars
 
-## --------------------------------------------------------------------------------------------
+## ----fig.alt = "Progressive labeling plot for SRSF6"-----------------------------------------
 PlotGeneProgressiveTimecourse(sars,"SRSF6",steady.state=list(Mock=TRUE,SARS=FALSE))
 
 ## --------------------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ Analyses(sars)
 ## --------------------------------------------------------------------------------------------
 head(GetAnalysisTable(sars))
 
-## ----fig.height=4, fig.width=4---------------------------------------------------------------
+## ----fig.height=4, fig.width=4, fig.alt = "Half-lives scatter plot mock vs SARS"-------------
 PlotScatter(sars,`kinetics.Mock.Half-life`,`kinetics.SARS.Half-life`,
             lim=c(0,24),correlation = FormatCorrelation())+
   geom_abline()

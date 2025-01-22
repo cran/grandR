@@ -18,6 +18,7 @@ SimulateReadsForSample(
   p.old = 1e-04,
   p.new = 0.04,
   p.new.fit = p.new,
+  enforce.parallelized = NA,
   seed = NULL
 )
 }
@@ -45,6 +46,8 @@ SimulateReadsForSample(
 \item{p.new}{the probability for a conversion in reads originating from new RNA}
 
 \item{p.new.fit}{the probability for a conversion in reads originating from new RNA that is used for fitting (to simulate bias in the estimation of p.new)}
+
+\item{enforce.parallelized}{should parallelization be used (NA: use state of IsParallel())}
 
 \item{seed}{seed value for the random number generator (set to make it deterministic!)}
 }

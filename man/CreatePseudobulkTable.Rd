@@ -26,3 +26,4 @@ Create Pseudobulk Table from a Seurat object
 \details{
 This function returns a table which can be used as input for GRAND3
 }
+\concept{data}
